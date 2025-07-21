@@ -10,6 +10,7 @@ export default defineConfig({
     vue(),
     vueDevTools(),
   ],
+  base: '/ponte-digital/',
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
