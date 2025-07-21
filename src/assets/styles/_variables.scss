@@ -1,0 +1,20 @@
+// src/assets/styles/_variables.scss
+
+:root {
+  // Paleta de Cores Baseada no Wireframe
+  --color-background: #FFFFFF;
+  --color-surface: #F8F9FA; // Cor de fundo do card e áreas de destaque
+  --color-primary-text: #212529;
+  --color-secondary-text: #6C757D;
+  --color-border: #DEE2E6;
+
+  // Botões
+  --button-primary-bg: #495057;
+  --button-primary-text: #FFFFFF;
+  --button-secondary-bg: #E9ECEF;
+  --button-secondary-text: #495057;
+  --button-secondary-border: #DEE2E6;
+
+  // Fontes
+  --font-family-base: 'Inter', sans-serif; // Exemplo de fonte, pode ser alterada
+}
