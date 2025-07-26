@@ -5,21 +5,21 @@
         <div class="col-lg-8">
           <h2 class="section-title">Todos os Projetos</h2>
           <p class="section-subtitle">
-            Explore nosso portfólio de trabalhos concluídos e veja o que podemos
+            Explore nosso portfólio de trabalhos concluídos e veja o que podemos 
             fazer por você.
           </p>
         </div>
       </div>
 
-      <div v-if="loading" class="text-center">
-        <p>Carregando projetos...</p>
+      <div v-if="projectStore.loading" class="d-flex justify-content-center">
+        <div class="spinner"></div>
       </div>
 
       <div v-else-if="error" class="text-center text-danger">
         <p>{{ error }}</p>
       </div>
 
-      <div v-else-if="allProjects.length > 0">
+      <div v-else-if="projectStore.projects.length > 0">
         <div class="row">
           <div
             v-for="project in paginatedProjects"
@@ -27,8 +27,14 @@
             class="col-lg-4 col-md-6 mb-4 d-flex align-items-stretch"
           >
             <div class="project-card">
-              <div class="card-image-placeholder">
+              <div
+                v-if="!project.imagemDestaqueUrl"
+                class="card-image-placeholder"
+              >
                 <i class="bi bi-image"></i>
+              </div>
+              <div v-else class="card-image">
+                <AuthenticatedImage :src="project.imagemDestaqueUrl" :alt="project.title" />
               </div>
               <div class="card-body">
                 <h5 class="card-title">{{ project.title }}</h5>
@@ -89,40 +95,41 @@
 </template>
 
 <script>
-import axios from "axios"; // 1. Importe o Axios
-import ProjectModal from "@/components/ProjectModal.vue"; // 1. Importe o novo componente
+// 1. REMOVA mapState dos imports
+import { useProjectStore } from "@/stores/projectStore";
+import ProjectModal from "@/components/ProjectModal.vue";
+import AuthenticatedImage from "@/components/AuthenticatedImage.vue";
 
 export default {
   name: "ProjectsView",
-  components: {
-    ProjectModal
-  },
+  components: { ProjectModal, AuthenticatedImage },
   data() {
     return {
-      // A lista agora começa vazia.
-      allProjects: [],
-      // Adicionamos estados para controle de UI
-      loading: true,
-      error: null,
       currentPage: 1,
       itemsPerPage: 6,
       selectedProject: null,
     };
   },
   computed: {
-    // As propriedades computadas de paginação continuam funcionando perfeitamente!
+    // 2. CRIE uma propriedade computada para a store inteira
+    projectStore() {
+      return useProjectStore();
+    },
+
+    // 3. ATUALIZE as outras propriedades para usar a 'projectStore'
     totalPages() {
-      if (!this.allProjects) return 0;
-      return Math.ceil(this.allProjects.length / this.itemsPerPage);
+      if (!this.projectStore.projects) return 0;
+      return Math.ceil(this.projectStore.projects.length / this.itemsPerPage);
     },
     paginatedProjects() {
-      if (!this.allProjects) return [];
+      if (!this.projectStore.projects) return [];
       const start = (this.currentPage - 1) * this.itemsPerPage;
       const end = start + this.itemsPerPage;
-      return this.allProjects.slice(start, end);
+      return this.projectStore.projects.slice(start, end);
     },
   },
   methods: {
+    // Seus métodos continuam iguais
     showProjectDetails(project) {
       this.selectedProject = project;
     },
@@ -144,31 +151,8 @@ export default {
     },
   },
   created() {
-    // CERTIFIQUE-SE QUE ESTA URL É EXATAMENTE A QUE FUNCIONA NO NAVEGADOR
-    const url = "http://localhost:10003/wp-json/wp/v2/projetos";
-
-    axios
-      .get(url)
-      .then((response) => {
-        this.allProjects = response.data.map((project) => ({
-          id: project.id,
-          title: project.title.rendered,
-          description: project.content.rendered,
-          content: project.acf.resumo_projeto,
-          integrantes: project.acf.integrantes || [],
-          imagemDestaqueUrl: project.acf.imagem_de_destaque ? project.acf.imagem_de_destaque.url : null,
-          galeria: project.acf.galeria_do_projeto || [],
-          status: project.acf.status_do_projeto
-        }));
-      })
-      .catch((error) => {
-        console.error("Erro ao buscar projetos:", error);
-        this.error =
-          "Não foi possível carregar os projetos. Tente novamente mais tarde.";
-      })
-      .finally(() => {
-        this.loading = false;
-      });
+    // A chamada no created continua igual, mas usando a propriedade computada
+    this.projectStore.fetchProjects();
   },
 };
 </script>
@@ -178,33 +162,27 @@ export default {
 
 .projects-section {
   padding: 6rem 0;
-  background-color: var(--color-surface);
 }
 
 .section-title {
   font-weight: 700;
-  color: var(--color-primary-text);
+  color: var(--color-surface);
   margin-bottom: 1rem;
 }
 
 .section-subtitle {
-  color: var(--color-secondary-text);
+  color: var(--color-surface);
   font-size: 1.1rem;
 }
 
 .project-card {
   width: 100%;
-  background-color: var(--color-background);
+  background-color: var(--color-surface);
   border-radius: 0.5rem;
   border: 1px solid var(--color-border);
   overflow: hidden;
   transition: all 0.3s ease-in-out;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
-
-  &:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 12px 20px rgba(0, 0, 0, 0.08);
-  }
 }
 
 .card-image-placeholder {
@@ -218,6 +196,22 @@ export default {
   border-bottom: 1px solid var(--color-border);
 }
 
+/* --- CÓDIGO MODIFICADO E NOVO AQUI --- */
+
+.card-image {
+  /* MODIFICADO: Adicionamos uma altura fixa para consistência */
+  height: 200px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.card-image img {
+  /* NOVO: Regras para a imagem se ajustar perfeitamente */
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
 .card-body {
   padding: 1.5rem;
 }
@@ -225,6 +219,7 @@ export default {
 .card-title {
   font-weight: 600;
   margin-bottom: 0.75rem;
+  color: var(--color-primary-text);
 }
 
 .card-text {
@@ -240,6 +235,28 @@ export default {
 
   &:hover {
     color: #000;
+  }
+}
+
+.spinner-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 4rem 0;
+}
+
+.spinner {
+  width: 50px;
+  height: 50px;
+  border: 5px solid var(--color-surface); /* Cor de fundo do círculo */
+  border-top-color: var(--color-primary-text); /* Cor da parte que gira */
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 </style>

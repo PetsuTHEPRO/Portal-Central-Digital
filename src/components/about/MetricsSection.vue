@@ -1,14 +1,14 @@
 <template>
   <section class="metrics-section">
     <div class="container">
-      <div class="row align-items:center">
+      <div class="row align-items:center background-metrics">
         <div class="col-lg-5 pe-lg-5 mb-5 mb-lg-0">
           <div class="icon-placeholder-lg mb-3">
             <i class="bi bi-graph-up-arrow"></i>
           </div>
           <h2 class="section-title">Nossas Métricas</h2>
           <p class="section-subtitle">
-            Lorem ipsum dolor sit amet consectetur adipiscing elit nunc sit velit eget sollicitudin sit posuere augue vestibulum eget turpis lobortis donec.
+            Através de ações concretas, o Programa Ponte Digital tem ampliado sua atuação a cada edição. Nossos resultados refletem o compromisso com a transformação social por meio da educação e tecnologia.
           </p>
         </div>
 
@@ -38,10 +38,10 @@ export default {
   data() {
     return {
       metrics: [
-        { value: '200+', title: 'Comunidades Alcançadas', description: 'Lorem ipsum dolor sit amet consectetur adipiscing elit', isDark: true },
-        { value: '99%', title: 'Satisfação dos Participantes', description: 'Lorem ipsum dolor sit amet consectetur adipiscing elit' },
-        { value: '34+', title: 'Projetos Realizados', description: 'Lorem ipsum dolor sit amet consectetur adipiscing elit' },
-        { value: '100+', title: 'Voluntários Envolvidos', description: 'Lorem ipsum dolor sit amet consectetur adipiscing elit' }
+        { value: '200+', title: 'Comunidades Alcançadas', description: 'Já impactamos dezenas de bairros e localidades por meio de ações educativas e tecnológicas.', isDark: true },
+        { value: '99%', title: 'Satisfação dos Participantes', description: 'A maioria dos envolvidos reconhece o programa como transformador e essencial para sua formação digital.' },
+        { value: '34+', title: 'Projetos Realizados', description: 'Desde oficinas até plataformas digitais, promovemos soluções reais para desafios sociais.' },
+        { value: '100+', title: 'Voluntários Envolvidos', description: 'Alunos, professores e parceiros colaboram ativamente para levar conhecimento à comunidade.' }
       ]
     }
   }
@@ -53,7 +53,6 @@ export default {
 
 .metrics-section {
   padding: 6rem 0;
-  background-color: var(--color-surface);
 }
 
 .icon-placeholder-lg {
@@ -70,6 +69,8 @@ export default {
 
 .section-title {
   font-weight: 700;
+  color: var(--color-primary-text);
+  margin-bottom: 1rem;
 }
 
 .section-subtitle {
@@ -91,7 +92,7 @@ export default {
   }
 
   &.is-dark {
-    background-color: var(--button-primary-bg);
+    background-color: #0644D8;
     color: #f8f9fa; /* Um branco suave */
     border-color: var(--button-primary-bg);
 
@@ -110,13 +111,13 @@ export default {
 .metric-value {
   font-size: 2.5rem;
   font-weight: 700;
-  color: var(--color-primary-text);
+  color: var(--color-title);
   margin-bottom: 0.5rem;
 }
 
 .metric-title {
   font-weight: 600;
-  color: var(--color-primary-text);
+  color: var(--color-title);
   margin-bottom: 0.75rem;
 }
 
@@ -124,5 +125,14 @@ export default {
   font-size: 0.9rem;
   color: var(--color-secondary-text);
   line-height: 1.5;
+}
+
+.background-metrics{
+  background-color: var(--color-surface);
+  padding: 6rem 2rem;
+  border-radius: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

@@ -31,8 +31,8 @@ export default {
 @use "@/assets/styles/_variables.scss";
 
 .gallery-section {
-  padding: 6rem 0;
-  background-color: var(--color-background);
+  padding-top: 2rem;
+  padding-bottom: 8rem;
 }
 
 .section-title {

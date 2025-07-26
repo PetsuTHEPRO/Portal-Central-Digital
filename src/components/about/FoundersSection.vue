@@ -3,15 +3,21 @@
     <div class="container">
       <div class="row align-items-center">
         <div class="col-lg-5 mb-5 mb-lg-0">
-          <h2 class="section-title">Conheça os Idealizadores do Programa Ponte Digital</h2>
+          <h2 class="section-title">
+            Conheça os Idealizadores do Programa Ponte Digital
+          </h2>
           <p class="section-subtitle my-4">
-            Lorem ipsum dolor sit amet consectetur adipiscing eli mattis sit phasellus mollis sit aliquam sit nullam.
+            Conheça os idealizadores por trás do Programa Ponte Digital,
+            responsáveis por transformar ideias em ações que conectam tecnologia
+            e comunidade.
           </p>
-          <router-link to="/contato" class="btn btn-primary">Ler Mais <i class="bi bi-arrow-right"></i></router-link>
+          <!-- <router-link to="/contato" class="btn btn-primary"
+            >Ler Mais <i class="bi bi-arrow-right"></i
+          ></router-link> -->
         </div>
 
         <div class="col-lg-7">
-          <div class="founders-grid">
+          <div class="founders-grid mt-5">
             <div
               v-for="founder in founders"
               :key="founder.name"
@@ -34,28 +40,38 @@
 
 <script>
 export default {
-  name: 'FoundersSection',
+  name: "FoundersSection",
   data() {
     return {
       founders: [
-        { name: 'Prof. Jeane', role: 'CEO & Founder' },
-        { name: 'Anderson Costa', role: 'VP of Finance' }
-      ]
-    }
-  }
-}
+        { name: "Prof. Jeane", role: "CEO & Founder" },
+        { name: "Anderson Costa", role: "VP of Finance" },
+      ],
+    };
+  },
+};
 </script>
 
 <style scoped lang="scss">
-@use '@/assets/styles/_variables.scss';
+@use "@/assets/styles/_variables.scss";
 
 .founders-section {
   padding: 6rem 0;
-  background-color: var(--color-background);
+  /* O gradiente é aplicado como uma imagem de fundo */
+  background-image: linear-gradient(
+    to bottom,
+    rgba(35, 58, 86, 0) 0%,
+    #233a56 10%,
+    #233a56 20%,
+    #233a56 80%,
+    #233a56 95%,
+    rgba(35, 58, 86, 0) 100%
+  );
 }
 
 .section-title {
   font-size: 2.5rem;
+  color: var(--color-primary-text);
   font-weight: 700;
   line-height: 1.2;
 }
@@ -78,7 +94,7 @@ export default {
   display: grid;
   grid-template-columns: repeat(2, 1fr); /* Duas colunas */
   gap: 2rem;
-  
+
   /* Posicionamento criativo dos itens */
   .founder-card:nth-of-type(2) {
     margin-top: 4rem; /* Empurra o segundo card para baixo */
@@ -119,7 +135,7 @@ export default {
 @media (max-width: 991.98px) {
   .founders-grid {
     grid-template-columns: 1fr; /* Uma coluna em telas menores */
-    
+
     /* Reseta os posicionamentos criativos */
     .founder-card:nth-of-type(2),
     .founder-card:nth-of-type(3) {

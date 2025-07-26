@@ -1,6 +1,8 @@
 import { createRouter, createWebHistory } from "vue-router";
 import HomeView from "../views/HomeView.vue";
 import ProjectsView from "../views/ProjectsView.vue";
+import PostView from "../views/PostView.vue";
+import BlogView from "../views/BlogView.vue";
 import AboutView from "@/views/AboutView.vue";
 
 const router = createRouter({
@@ -18,9 +20,16 @@ const router = createRouter({
       component: ProjectsView,
     },
     {
-      path: "/posts",
+      // Rota para um post individual. :id é um parâmetro dinâmico.
+      path: "/posts/:id",
+      name: "posts-details",
+      component: PostView,
+      props: true,
+    },
+    {
+      path: "/posts", // 2. Defina o caminho para a página
       name: "posts",
-      component: () => import("../views/PostView.vue"),
+      component: BlogView, // 3. Associe com o componente
     },
     {
       path: "/galeria",

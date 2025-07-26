@@ -5,14 +5,17 @@
         <div class="col-lg-8">
           <h1 class="section-title">Programa Ponte Digital</h1>
           <p class="section-subtitle">
-            Lorem ipsum dolor sit amet consectetur adipiscing eli mattis sit phasellus mollis sit aliquam sit nullam ultrices.
+            Através de projetos inovadores, buscamos transformar vidas ao integrar o conhecimento acadêmico com as demandas reais da sociedade.
           </p>
         </div>
       </div>
       <div class="row">
         <div class="col">
-          <div class="image-placeholder-large">
-            <i class="bi bi-image"></i>
+          <div class="image-card">
+            <img
+              src="@/assets/about-image-destaque.svg"
+              alt="Ponte Digital"
+            />
           </div>
         </div>
       </div>
@@ -31,16 +34,15 @@ export default {
 
 .about-hero-section {
   padding: 6rem 0;
-  background-color: var(--color-background);
 }
 
 .section-title {
   font-weight: 700;
-  color: var(--color-primary-text);
+  color: var(--color-title);
 }
 
 .section-subtitle {
-  color: var(--color-secondary-text);
+  color: var(--color-title);
   font-size: 1.1rem;
 }
 

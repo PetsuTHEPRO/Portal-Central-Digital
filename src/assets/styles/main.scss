@@ -1,0 +1,16 @@
+/* Estilo reusável para o efeito de skeleton */
+.skeleton-box {
+  background: linear-gradient(90deg, #0F161F 25%, #1A2634 50%, #0F161F 75%);
+  background-size: 200% 100%;
+  border-radius: 0.25rem;
+  animation: shimmer 1.5s infinite linear;
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}

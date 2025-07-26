@@ -7,20 +7,11 @@
     aria-labelledby="projectDetailModalLabel"
     aria-hidden="true"
   >
-    <div
-      class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable"
-    >
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
       <div class="modal-content" v-if="project">
         <div class="modal-header">
-          <h5 class="modal-title" id="projectDetailModalLabel">
-            {{ project.title }}
-          </h5>
-          <button
-            type="button"
-            class="btn-close"
-            @click="closeModal"
-            aria-label="Close"
-          ></button>
+          <h5 class="modal-title" id="projectDetailModalLabel">{{ project.title }}</h5>
+          <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
         </div>
         <div class="modal-body">
           <img
@@ -34,63 +25,20 @@
           </div>
 
           <div class="modal-main-content">
-            <p>
-              <strong>Status:</strong>
-              <span class="badge bg-primary ms-2">{{ project.status }}</span>
-            </p>
-
+            <p><strong>Status:</strong> <span class="badge bg-primary ms-2">{{ project.status }}</span></p>
             <h6>Descrição</h6>
-            <p>{{ project.description }}</p>
-
+            <p v-html="project.description"></p>
             <hr class="my-4" />
 
-            <h6 v-if="project.integrantes && project.integrantes.length > 0">
-              Integrantes
-            </h6>
-            <div class="swiper">
-              <div class="swiper-wrapper">
-                <div
-                  v-for="integrante in project.integrantes"
-                  :key="integrante.id"
-                  class="swiper-slide"
-                >
-                  <div class="integrante-card">
-                    <img
-                      v-if="integrante.foto_url"
-                      :src="integrante.foto_url"
-                      :alt="integrante.nome"
-                      class="integrante-foto"
-                    />
-                    <div v-else class="integrante-placeholder">
-                      <i class="bi bi-person"></i>
-                    </div>
-                    <div class="integrante-info">
-                      <div class="integrante-nome">{{ integrante.nome }}</div>
-                      <div class="integrante-cargo">{{ integrante.cargo }}</div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div class="swiper-button-next"></div>
-              <div class="swiper-button-prev"></div>
-            </div>
-
+            <h6 v-if="project.integrantes && project.integrantes.length > 0">Integrantes</h6>
+            <IntegrantesSlider :memberIds="project.integrantes" />
+              
             <hr class="my-4" />
 
-            <h6 v-if="project.galeria && project.galeria.length > 0">
-              Galeria
-            </h6>
+            <h6 v-if="project.galeria && project.galeria.length > 0">Galeria</h6>
             <div class="row g-2">
-              <div
-                v-for="image in project.galeria"
-                :key="image.id"
-                class="col-lg-4 col-md-6"
-              >
-                <img
-                  :src="image.url"
-                  class="img-fluid rounded"
-                  :alt="image.alt"
-                />
+              <div v-for="image in project.galeria" :key="image.id" class="col-lg-4 col-md-6">
+                <img :src="image.url" class="img-fluid rounded" :alt="image.alt" />
               </div>
             </div>
           </div>
@@ -102,9 +50,13 @@
 
 <script>
 import { Modal } from "bootstrap";
+import IntegrantesSlider from '@/components/IntegrantesSlider.vue';
 
 export default {
   name: "ProjectModal",
+  components: {
+    IntegrantesSlider
+  },
   props: {
     project: {
       type: Object,
@@ -117,12 +69,16 @@ export default {
     };
   },
   mounted() {
+    // A única coisa necessária aqui é inicializar o modal do Bootstrap
     this.modalInstance = new Modal(this.$refs.projectModal);
-    this.$refs.projectModal.addEventListener("hidden.bs.modal", () => {
-      this.$emit("close");
+
+    // E avisar o componente pai quando o modal for fechado
+    this.$refs.projectModal.addEventListener('hidden.bs.modal', () => {
+      this.$emit('close');
     });
   },
   watch: {
+    // Este watch continua controlando se o modal abre ou fecha
     project(newVal) {
       if (newVal) {
         this.modalInstance.show();
@@ -140,6 +96,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+/* Nenhum estilo precisa ser alterado, todos continuam os mesmos */
 .modal-content {
   border-radius: 0.5rem;
   border: none;
@@ -150,25 +107,16 @@ export default {
 .modal-title {
   font-weight: 600;
 }
-
-/* --- ESTILOS ADICIONADOS --- */
-
-/* Estilo para a imagem de destaque */
 .modal-featured-image {
   width: 100%;
-  height: 400px; /* Altura fixa para dar destaque */
-  object-fit: cover; /* Garante que a imagem cubra a área sem distorcer */
+  height: 400px;
+  object-fit: cover;
   border-radius: 0.5rem;
   margin-bottom: 1.5rem;
 }
-
-/* Adiciona um padding ao corpo do modal para não colar nas bordas */
 .modal-main-content {
   padding: 0 1rem 1rem 1rem;
 }
-
-/* Adicione este código ao final do seu <style> */
-
 .placeholder-bg {
   background-color: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -176,7 +124,6 @@ export default {
   align-items: center;
   justify-content: center;
 }
-
 .placeholder-icon {
   font-size: 5rem;
   color: var(--color-secondary-text);

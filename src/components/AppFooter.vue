@@ -6,7 +6,7 @@
           <div class="logo-placeholder mb-3">
             <i class="bi bi-image"></i>
           </div>
-          <p class="footer-text">Lorem ipsum dolor sit amet consectetur adipiscing elit aliquam mauris sed ma.</p>
+          <p class="footer-text">O Programa Ponte Digital conecta o IFMA à comunidade, promovendo inclusão digital e capacitação tecnológica.</p>
           <div class="social-icons">
             <a href="#"><i class="bi bi-facebook"></i></a>
             <a href="#"><i class="bi bi-twitter"></i></a>
@@ -56,7 +56,7 @@
       </div>
 
       <div class="copyright-section text-center py-4">
-        Copyright © 2025 BRIX Agency | All Rights Reserved
+        Copyright © 2025 Central Digital | All Rights Reserved
       </div>
     </div>
   </footer>
@@ -72,8 +72,8 @@ export default {
 @use '@/assets/styles/_variables.scss';
 
 .app-footer {
-  background-color: var(--footer-bg);
-  color: var(--footer-text);
+  background-color: #101720 !important;
+  color: white;
 }
 
 .logo-placeholder {
@@ -88,7 +88,7 @@ export default {
 }
 
 .footer-heading {
-  color: var(--footer-heading);
+  color: white;
   font-weight: 600;
   margin-bottom: 1rem;
   font-size: 1rem;
@@ -99,21 +99,21 @@ export default {
 }
 
 .list-unstyled a {
-  color: var(--footer-text);
+  color: white;
   text-decoration: none;
   transition: color 0.2s ease;
   &:hover {
-    color: var(--footer-heading);
+    color: white;
   }
 }
 
-.social-icons a {
-  color: var(--footer-text);
+.social-icons a {  
+  color: white;
   margin-right: 1rem;
   font-size: 1.2rem;
   transition: color 0.2s ease;
   &:hover {
-    color: var(--footer-heading);
+    color: white;
   }
 }
 
@@ -134,7 +134,7 @@ export default {
     align-items: center;
     justify-content: center;
     border-radius: 0.25rem;
-    color: var(--footer-text);
+    color: white;
     flex-shrink: 0;
     margin-right: 0.75rem;
 }
