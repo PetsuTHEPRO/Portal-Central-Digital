@@ -11,12 +11,18 @@
         </div>
       </div>
 
-      <div v-if="projectStore.loading" class="d-flex justify-content-center">
-        <div class="spinner"></div>
+      <div v-if="projectStore.loading" class="text-center">
+        <div class="loading-spinner">
+          <i class="bi bi-arrow-clockwise spin"></i>
+          <p class="mt-3">Carregando projetos...</p>
+        </div>
       </div>
 
-      <div v-else-if="error" class="text-center text-danger">
-        <p>{{ error }}</p>
+      <div v-else-if="error" class="text-center">
+        <div class="error-message">
+          <i class="bi bi-exclamation-triangle"></i>
+          <p class="mt-3 text-danger">{{ error }}</p>
+        </div>
       </div>
 
       <div v-else-if="projectStore.projects.length > 0">
@@ -42,10 +48,10 @@
                   {{ project.content }}
                 </p>
                 <button
-                  class="btn btn-outline-secondary mt-auto"
+                  class="btn btn-primary mt-auto"
                   @click="showProjectDetails(project)"
                 >
-                  Ver Detalhes
+                  Ver Detalhes <i class="bi bi-arrow-right"></i>
                 </button>
               </div>
             </div>
@@ -57,36 +63,48 @@
           aria-label="Navegação de página"
           class="mt-5"
         >
-          <ul class="pagination justify-content-center">
-            <li class="page-item" :class="{ disabled: currentPage === 1 }">
-              <a class="page-link" href="#" @click.prevent="prevPage"
-                >Anterior</a
-              >
-            </li>
-            <li
-              v-for="page in totalPages"
-              :key="page"
-              class="page-item"
-              :class="{ active: page === currentPage }"
+          <div class="pagination-container">
+            <button 
+              class="pagination-btn"
+              :class="{ disabled: currentPage === 1 }"
+              @click="prevPage"
+              :disabled="currentPage === 1"
             >
-              <a class="page-link" href="#" @click.prevent="goToPage(page)">{{
-                page
-              }}</a>
-            </li>
-            <li
-              class="page-item"
+              <i class="bi bi-chevron-left"></i>
+              Anterior
+            </button>
+            
+            <div class="page-numbers">
+              <button
+                v-for="page in totalPages"
+                :key="page"
+                class="page-btn"
+                :class="{ active: page === currentPage }"
+                @click="goToPage(page)"
+              >
+                {{ page }}
+              </button>
+            </div>
+            
+            <button 
+              class="pagination-btn"
               :class="{ disabled: currentPage === totalPages }"
+              @click="nextPage"
+              :disabled="currentPage === totalPages"
             >
-              <a class="page-link" href="#" @click.prevent="nextPage"
-                >Próximo</a
-              >
-            </li>
-          </ul>
+              Próximo
+              <i class="bi bi-chevron-right"></i>
+            </button>
+          </div>
         </nav>
       </div>
 
-      <div v-else class="text-center no-projects-message">
-        <p>Nenhum projeto encontrado no momento.</p>
+      <div v-else class="text-center">
+        <div class="empty-state">
+          <i class="bi bi-folder2-open"></i>
+          <h5 class="mt-3">Nenhum projeto encontrado</h5>
+          <p>Não há projetos disponíveis no momento.</p>
+        </div>
       </div>
 
       <ProjectModal :project="selectedProject" @close="closeModal" />
@@ -159,104 +177,315 @@ export default {
 
 <style scoped lang="scss">
 @use "@/assets/styles/_variables.scss";
+@use "sass:color";
 
 .projects-section {
-  padding: 6rem 0;
-}
-
-.section-title {
-  font-weight: 700;
-  color: var(--color-surface);
-  margin-bottom: 1rem;
-}
-
-.section-subtitle {
-  color: var(--color-surface);
-  font-size: 1.1rem;
-}
-
-.project-card {
-  width: 100%;
-  background-color: var(--color-surface);
-  border-radius: 0.5rem;
-  border: 1px solid var(--color-border);
+  padding: 8rem 0;
+  background: rgb(21, 23, 42);
+  min-height: 100vh;
+  position: relative;
   overflow: hidden;
-  transition: all 0.3s ease-in-out;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.04);
-}
 
-.card-image-placeholder {
-  height: 200px;
-  background-color: var(--color-surface);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3rem;
-  color: var(--color-secondary-text);
-  border-bottom: 1px solid var(--color-border);
-}
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent,
+      rgba(172, 0, 255, 0.3),
+      rgba(6, 68, 216, 0.3),
+      transparent
+    );
+  }
 
-/* --- CÓDIGO MODIFICADO E NOVO AQUI --- */
-
-.card-image {
-  /* MODIFICADO: Adicionamos uma altura fixa para consistência */
-  height: 200px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.card-image img {
-  /* NOVO: Regras para a imagem se ajustar perfeitamente */
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center;
-}
-
-.card-body {
-  padding: 1.5rem;
-}
-
-.card-title {
-  font-weight: 600;
-  margin-bottom: 0.75rem;
-  color: var(--color-primary-text);
-}
-
-.card-text {
-  color: var(--color-secondary-text);
-  font-size: 0.95rem;
-}
-
-.learn-more {
-  color: var(--color-primary-text);
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.2s ease;
-
-  &:hover {
-    color: #000;
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(
+      circle at bottom center,
+      rgba(172, 0, 255, 0.1),
+      rgba(6, 68, 216, 0.1),
+      transparent 70%
+    );
+    pointer-events: none;
   }
 }
 
-.spinner-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 4rem 0;
+.section-title {
+  font-size: 3rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  margin-bottom: 1.5rem;
+  background: linear-gradient(135deg, #ac00ff, #0644d8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-.spinner {
-  width: 50px;
-  height: 50px;
-  border: 5px solid var(--color-surface); /* Cor de fundo do círculo */
-  border-top-color: var(--color-primary-text); /* Cor da parte que gira */
-  border-radius: 50%;
+.section-subtitle {
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 1.2rem;
+  line-height: 1.6;
+}
+
+// Loading and error states
+.loading-spinner, .error-message, .empty-state {
+  color: rgba(255, 255, 255, 0.8);
+  padding: 3rem 0;
+  
+  i {
+    font-size: 3rem;
+    background: linear-gradient(135deg, #ac00ff, #0644d8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  p, h5 {
+    color: rgba(255, 255, 255, 0.8);
+  }
+}
+
+.spin {
   animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
-  to {
-    transform: rotate(360deg);
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.project-card {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  overflow: hidden;
+  backdrop-filter: blur(16px);
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(172, 0, 255, 0.05),
+      rgba(6, 68, 216, 0.05)
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  &:hover {
+    transform: translateY(-8px);
+    border-color: rgba(172, 0, 255, 0.3);
+    box-shadow: 0 12px 40px rgba(6, 68, 216, 0.25);
+    
+    &::before {
+      opacity: 1;
+    }
+  }
+}
+
+.card-image-placeholder {
+  height: 200px;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 3rem;
+  color: rgba(255, 255, 255, 0.4);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  
+  i {
+    background: linear-gradient(135deg, #ac00ff, #0644d8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+}
+
+.card-image {
+  height: 200px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: hidden;
+  
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    transition: transform 0.3s ease;
+  }
+}
+
+.project-card:hover .card-image img {
+  transform: scale(1.05);
+}
+
+.card-body {
+  padding: 2rem;
+  display: flex;
+  flex-direction: column;
+  height: calc(100% - 200px);
+}
+
+.card-title {
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #FFFFFF;
+  font-size: 1.25rem;
+}
+
+.card-text {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.95rem;
+  line-height: 1.6;
+  flex-grow: 1;
+  margin-bottom: 1.5rem;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #0644D8, #ac00ff);
+  border: none;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  font-weight: 500;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  margin-top: auto;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(6, 68, 216, 0.4);
+    background: linear-gradient(135deg, color.adjust(#0644D8, $lightness: -10%), color.adjust(#ac00ff, $lightness: -10%));
+  }
+  
+  i {
+    margin-left: 0.5rem;
+    transition: transform 0.3s ease;
+  }
+  
+  &:hover i {
+    transform: translateX(3px);
+  }
+}
+
+// Pagination styles
+.pagination-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.pagination-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+
+  &:hover:not(.disabled) {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(172, 0, 255, 0.3);
+    color: #FFFFFF;
+    transform: translateY(-2px);
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.page-numbers {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.page-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.8);
+  width: 40px;
+  height: 40px;
+  border-radius: 0.5rem;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(172, 0, 255, 0.3);
+    color: #FFFFFF;
+  }
+
+  &.active {
+    background: linear-gradient(135deg, #ac00ff, #0644d8);
+    border-color: transparent;
+    color: #FFFFFF;
+    box-shadow: 0 4px 16px rgba(172, 0, 255, 0.3);
+  }
+}
+
+// Responsive design
+@media (max-width: 991.98px) {
+  .projects-section {
+    padding: 6rem 0;
+  }
+
+  .section-title {
+    font-size: 2.5rem;
+  }
+  
+  .pagination-container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .page-numbers {
+    order: -1;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .section-title {
+    font-size: 2rem;
+  }
+
+  .card-body {
+    padding: 1.5rem;
+  }
+
+  .pagination-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
   }
 }
 </style>
