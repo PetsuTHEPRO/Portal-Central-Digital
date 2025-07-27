@@ -127,20 +127,36 @@ export default {
 
 <style scoped lang="scss">
 .swiper-slide {
-  flex-shrink: 1; /* <-- CORREÇÃO PRINCIPAL */
+  flex-shrink: 1;
 }
 
 .swiper-container {
-  /* Define uma largura para o carrossel ocupar */
   width: 100%;
-  /* Essencial: esconde os slides que estão fora da área visível */
   overflow: hidden;
-  padding: 1rem 0; /* Adiciona um espaço para as setas não ficarem coladas */
+  padding: 1rem 0;
 }
 
 .integrante-card {
   text-align: center;
+  padding: 1.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 
+      0 8px 25px rgba(0, 0, 0, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    border-color: rgba(172, 0, 255, 0.3);
+  }
 }
+
 .integrante-foto,
 .integrante-placeholder {
   width: 120px;
@@ -148,27 +164,79 @@ export default {
   border-radius: 50%;
   object-fit: cover;
   margin: 0 auto;
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 3rem;
-  color: var(--color-secondary-text);
+  color: rgba(255, 255, 255, 0.4);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(172, 0, 255, 0.1), rgba(6, 68, 216, 0.1));
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .integrante-card:hover & {
+    border-color: rgba(172, 0, 255, 0.3);
+    
+    &::before {
+      opacity: 1;
+    }
+  }
 }
+
 .integrante-info {
   margin-top: 1rem;
 }
+
 .integrante-nome {
   font-weight: 600;
+  color: #fff;
+  font-size: 1.1rem;
+  margin-bottom: 0.25rem;
 }
+
 .integrante-cargo {
   font-size: 0.9rem;
-  color: var(--color-secondary-text);
+  color: rgba(255, 255, 255, 0.7);
+  background: linear-gradient(135deg, #ac00ff, #0644d8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
+
 .swiper-button-next,
 .swiper-button-prev {
-  color: var(--color-primary-text);
+  color: #fff;
   transform: scale(0.7);
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(172, 0, 255, 0.2);
+    border-color: rgba(172, 0, 255, 0.3);
+    transform: scale(0.8);
+  }
+
+  &::after {
+    font-size: 16px;
+    font-weight: 600;
+  }
 }
 </style>

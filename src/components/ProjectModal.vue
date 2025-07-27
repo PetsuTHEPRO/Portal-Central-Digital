@@ -96,36 +96,139 @@ export default {
 </script>
 
 <style scoped lang="scss">
-/* Nenhum estilo precisa ser alterado, todos continuam os mesmos */
 .modal-content {
-  border-radius: 0.5rem;
+  border-radius: 1rem;
   border: none;
+  background: rgba(13, 13, 13, 0.95);
+  backdrop-filter: blur(20px);
+  box-shadow: 
+    0 25px 50px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  color: #fff;
 }
+
 .modal-header {
-  border-bottom: 1px solid var(--color-border);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 1rem 1rem 0 0;
+  padding: 1.5rem 2rem;
+
+  .btn-close {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    filter: invert(1);
+
+    &:hover {
+      background: rgba(255, 0, 0, 0.2);
+      border-color: rgba(255, 0, 0, 0.3);
+      transform: scale(1.1);
+    }
+  }
 }
+
 .modal-title {
   font-weight: 600;
+  font-size: 1.5rem;
+  background: linear-gradient(135deg, #ac00ff, #0644d8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
+
+.modal-body {
+  padding: 2rem;
+}
+
 .modal-featured-image {
   width: 100%;
   height: 400px;
   object-fit: cover;
-  border-radius: 0.5rem;
+  border-radius: 0.75rem;
   margin-bottom: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: scale(1.02);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+  }
 }
+
 .modal-main-content {
   padding: 0 1rem 1rem 1rem;
+
+  h6 {
+    color: #fff;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    background: linear-gradient(135deg, #ac00ff, #0644d8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  p {
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.6;
+  }
+
+  .badge {
+    background: linear-gradient(135deg, #ac00ff, #0644d8) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(8px);
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+  }
+
+  hr {
+    border-color: rgba(255, 255, 255, 0.1);
+    margin: 2rem 0;
+  }
+
+  .row .col-lg-4,
+  .row .col-md-6 {
+    img {
+      border-radius: 0.5rem;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+
+      &:hover {
+        transform: scale(1.05);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        border-color: rgba(172, 0, 255, 0.3);
+      }
+    }
+  }
 }
+
 .placeholder-bg {
-  background-color: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   display: flex;
   align-items: center;
   justify-content: center;
+  backdrop-filter: blur(8px);
 }
+
 .placeholder-icon {
   font-size: 5rem;
-  color: var(--color-secondary-text);
+  color: rgba(255, 255, 255, 0.3);
+  background: linear-gradient(135deg, #ac00ff, #0644d8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+// Dark overlay for better readability
+.modal-backdrop {
+  background-color: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
 }
 </style>

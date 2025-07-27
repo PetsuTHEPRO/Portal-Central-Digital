@@ -54,94 +54,196 @@ export default {
 
 <style scoped lang="scss">
 @use "@/assets/styles/_variables.scss";
+@use "sass:color";
 
 .founders-section {
-  padding: 6rem 0;
-  /* O gradiente é aplicado como uma imagem de fundo */
-  background-image: linear-gradient(
-    to bottom,
-    rgba(35, 58, 86, 0) 0%,
-    #233a56 10%,
-    #233a56 20%,
-    #233a56 80%,
-    #233a56 95%,
-    rgba(35, 58, 86, 0) 100%
-  );
+  padding: 8rem 0;
+  position: relative;
+  background: rgb(21, 23, 42);
+  overflow: hidden;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent,
+      rgba(172, 0, 255, 0.3),
+      rgba(6, 68, 216, 0.3),
+      transparent
+    );
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(
+      circle at bottom left,
+      rgba(172, 0, 255, 0.1),
+      rgba(6, 68, 216, 0.1),
+      transparent 70%
+    );
+    pointer-events: none;
+  }
 }
 
 .section-title {
   font-size: 2.5rem;
-  color: var(--color-primary-text);
+  color: #FFFFFF;
   font-weight: 700;
   line-height: 1.2;
+  background: linear-gradient(135deg, #ac00ff, #0644d8);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .section-subtitle {
-  color: var(--color-secondary-text);
+  color: rgba(255, 255, 255, 0.85);
   font-size: 1.1rem;
+  line-height: 1.6;
 }
 
 .btn-primary {
-  background-color: var(--button-primary-bg);
-  border-color: var(--button-primary-bg);
-  color: var(--button-primary-text);
-  padding: 0.75rem 1.5rem;
+  background-color: #0644D8;
+  border: none;
+  color: white;
+  padding: 0.85rem 1.75rem;
   font-weight: 500;
+  transition: all 0.3s ease;
+  border-radius: 0.5rem;
+  
+  &:hover {
+    background-color: color.adjust(#0644D8, $lightness: -10%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px rgba(6, 68, 216, 0.3);
+  }
 }
 
 /* Grid para as fotos dos fundadores */
 .founders-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr); /* Duas colunas */
+  grid-template-columns: repeat(2, 1fr);
   gap: 2rem;
 
-  /* Posicionamento criativo dos itens */
   .founder-card:nth-of-type(2) {
-    margin-top: 4rem; /* Empurra o segundo card para baixo */
+    margin-top: 4rem;
   }
   .founder-card:nth-of-type(3) {
-    margin-top: -4rem; /* Puxa o terceiro card para cima */
-    grid-column: 1 / span 2; /* Faz o terceiro card ocupar as duas colunas */
+    margin-top: -4rem;
+    grid-column: 1 / span 2;
     display: flex;
     flex-direction: column;
     align-items: center;
   }
 }
 
+.founder-card {
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-5px);
+  }
+}
+
 .image-placeholder {
   width: 100%;
   height: 300px;
-  background-color: var(--color-surface);
-  border-radius: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 1rem;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 3rem;
-  color: var(--color-secondary-text);
-  border: 1px solid var(--color-border);
+  color: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  
+  i {
+    background: linear-gradient(135deg, #ac00ff, #0644d8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    z-index: 2;
+    position: relative;
+  }
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      135deg,
+      rgba(172, 0, 255, 0.1),
+      rgba(6, 68, 216, 0.1)
+    );
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  &:hover {
+    border-color: rgba(172, 0, 255, 0.3);
+    box-shadow: 0 8px 32px rgba(6, 68, 216, 0.2);
+    
+    &::before {
+      opacity: 1;
+    }
+  }
+}
+
+.founder-info {
+  margin-top: 1.5rem;
 }
 
 .founder-name {
   font-weight: 600;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.5rem;
+  color: #FFFFFF;
+  font-size: 1.1rem;
 }
 
 .founder-role {
-  color: var(--color-secondary-text);
-  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.95rem;
+  margin-bottom: 0;
 }
 
 /* Ajustes para telas menores */
 @media (max-width: 991.98px) {
-  .founders-grid {
-    grid-template-columns: 1fr; /* Uma coluna em telas menores */
+  .founders-section {
+    padding: 6rem 0;
+  }
 
-    /* Reseta os posicionamentos criativos */
+  .section-title {
+    font-size: 2rem;
+  }
+
+  .founders-grid {
+    grid-template-columns: 1fr;
+
     .founder-card:nth-of-type(2),
     .founder-card:nth-of-type(3) {
       margin-top: 0;
       grid-column: auto;
     }
+  }
+
+  .image-placeholder {
+    height: 250px;
+    font-size: 2.5rem;
   }
 }
 </style>
