@@ -10,6 +10,7 @@
     "deploy": "npm run build && cp dist/index.html dist/404.html && gh-pages -d dist"
   },
   "dependencies": {
+    "aos": "^2.3.4",
     "axios": "^1.10.0",
     "bootstrap": "^5.3.7",
     "pinia": "^3.0.3",

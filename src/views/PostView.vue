@@ -177,6 +177,58 @@ export default {
         // Fallback to mock data
         const mockPosts = [
           { 
+            id: 'ponte-digital-oficinas-sabado', 
+            category: 'Eventos', 
+            title: 'Ponte Digital Irá Fazer Oficinas no Sábado!',
+            author: { name: 'Jeane Silva' },
+            date: '2025-08-18',
+            readTime: 3,
+            tags: ['Oficinas', 'Tecnologia', 'Comunidade', 'Workshop'],
+            featuredImageUrl: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80',
+            summary: 'Não perca essa oportunidade única de aprender com nossa equipe especializada. Workshops exclusivos sobre desenvolvimento web, design e tecnologias emergentes.',
+            content: `
+              <p>O Programa Ponte Digital tem o prazer de anunciar uma série de oficinas práticas que acontecerão no próximo sábado! Este evento promete ser uma experiência transformadora para todos os participantes interessados em tecnologia e inovação.</p>
+              
+              <h4>🎯 O que você vai aprender</h4>
+              <p>Nossas oficinas foram cuidadosamente planejadas para oferecer conhecimento prático e aplicável em diversas áreas da tecnologia:</p>
+              <ul>
+                <li><strong>Desenvolvimento Web:</strong> Aprenda a criar sites modernos e responsivos</li>
+                <li><strong>Design Digital:</strong> Domine as ferramentas de design e UX/UI</li>
+                <li><strong>Tecnologias Emergentes:</strong> Explore IA, Machine Learning e muito mais</li>
+                <li><strong>Programação para Iniciantes:</strong> Dê os primeiros passos no mundo da programação</li>
+              </ul>
+              
+              <h4>👥 Quem são os facilitadores</h4>
+              <p>Nossa equipe é composta por profissionais experientes e estudantes dedicados do IFMA, todos comprometidos em compartilhar conhecimento de forma acessível e prática. Cada oficina será conduzida por especialistas na área, garantindo uma experiência de aprendizado de alta qualidade.</p>
+              
+              <blockquote>"A educação é a arma mais poderosa que você pode usar para mudar o mundo. E a tecnologia é nossa ferramenta para democratizar essa educação." - Equipe Ponte Digital</blockquote>
+              
+              <h4>📅 Programação do Evento</h4>
+              <p>O evento acontecerá das 8h às 17h, com intervalos para networking e coffee break. Cada participante poderá escolher até 3 oficinas diferentes durante o dia, maximizando sua experiência de aprendizado.</p>
+              
+              <p><strong>Horários disponíveis:</strong></p>
+              <ul>
+                <li>8h - 10h: Primeira rodada de oficinas</li>
+                <li>10h30 - 12h30: Segunda rodada de oficinas</li>
+                <li>14h - 16h: Terceira rodada de oficinas</li>
+                <li>16h30 - 17h: Encerramento e networking</li>
+              </ul>
+              
+              <h4>🎁 O que está incluso</h4>
+              <ul>
+                <li>Certificado de participação</li>
+                <li>Material didático exclusivo</li>
+                <li>Coffee break e lanche</li>
+                <li>Acesso à comunidade exclusiva no Discord</li>
+                <li>Mentoria pós-evento por 30 dias</li>
+              </ul>
+              
+              <p>Este é mais do que um evento educacional - é uma oportunidade de fazer parte de uma comunidade que acredita no poder transformador da tecnologia. Venha descobrir como a inovação pode impactar positivamente nossa sociedade!</p>
+              
+              <p><strong>Vagas limitadas!</strong> Garante já sua participação e faça parte dessa jornada de aprendizado e transformação.</p>
+            `
+          },
+          { 
             id: 'oficinas-no-sabado', 
             category: 'Eventos', 
             title: 'Ponte Digital Irá Fazer Oficinas no Sábado!',
