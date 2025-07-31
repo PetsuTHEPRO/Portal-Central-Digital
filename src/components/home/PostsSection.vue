@@ -99,7 +99,7 @@
                   </div>
                 </div>
                 <div class="card-pulse"></div>
-              </div>
+              </router-link>
 
               <div class="floating-cards">
                 <div
