@@ -5,7 +5,9 @@
         <div class="col-lg-8">
           <h1 class="page-title">Confira os Registros das Nossas Oficinas!</h1>
           <p class="page-subtitle">
-            Explore os momentos especiais capturados durante nossas oficinas e eventos. Cada imagem conta uma história de aprendizado e transformação.
+            Explore os momentos especiais capturados durante nossas oficinas e
+            eventos. Cada imagem conta uma história de aprendizado e
+            transformação.
           </p>
         </div>
       </div>
@@ -14,11 +16,15 @@
       <div class="row justify-content-center mb-5">
         <div class="col-lg-8">
           <div class="filter-container">
-            <button 
-              v-for="period in periods" 
+            <button
+              v-for="period in periods"
               :key="period.value"
               @click="selectedPeriod = period.value"
-              :class="['btn', 'filter-btn', { 'active': selectedPeriod === period.value }]"
+              :class="[
+                'btn',
+                'filter-btn',
+                { active: selectedPeriod === period.value },
+              ]"
             >
               {{ period.label }}
             </button>
@@ -51,9 +57,10 @@
           @click="openModal(item)"
         >
           <div class="image-card" :style="{ height: getRandomHeight() }">
-            <img 
-              v-if="item.image" 
-              :src="item.image.url" 
+            <AuthenticatedImage
+              v-if="item.image"
+              :src="item.image.url"
+              class="image"
               :alt="item.title || 'Imagem da galeria'"
               @load="onImageLoad"
               @error="onImageError"
@@ -63,7 +70,7 @@
             </div>
             <div class="image-overlay">
               <div class="image-info">
-                <h6>{{ item.title || 'Sem título' }}</h6>
+                <h6>{{ item.title || "Sem título" }}</h6>
                 <p>{{ formatDate(item.date) }}</p>
               </div>
             </div>
@@ -72,7 +79,10 @@
       </div>
 
       <!-- Empty state -->
-      <div v-if="!loading && !error && filteredGalleryItems.length === 0" class="text-center">
+      <div
+        v-if="!loading && !error && filteredGalleryItems.length === 0"
+        class="text-center"
+      >
         <div class="empty-state">
           <i class="bi bi-images"></i>
           <h5 class="mt-3">Nenhuma imagem encontrada</h5>
@@ -87,7 +97,7 @@
         <button class="modal-close" @click="closeModal">
           <i class="bi bi-x-lg"></i>
         </button>
-        <img :src="selectedImage.image?.url" :alt="selectedImage.title" />
+        <AuthenticatedImage :src="selectedImage.image?.url" :alt="selectedImage.title" />
         <div class="modal-info">
           <h5>{{ selectedImage.title }}</h5>
           <p>{{ formatDate(selectedImage.date) }}</p>
@@ -98,45 +108,59 @@
 </template>
 
 <script>
-import apiService from '@/services/api';
+import AuthenticatedImage from "@/components/AuthenticatedImage.vue";
+import apiService from "@/services/api";
 
 export default {
-  name: 'GalleryView',
+  name: "GalleryView",
+  components: {
+    AuthenticatedImage,
+  },
   data() {
     return {
       galleryItems: [],
       loading: false,
       error: null,
-      selectedPeriod: 'all',
+      selectedPeriod: "all",
       selectedImage: null,
       periods: [
-        { value: 'all', label: 'Todos os Períodos' },
-        { value: '2024', label: '2024' },
-        { value: '2023', label: '2023' },
-        { value: '2022', label: '2022' },
-        { value: 'recent', label: 'Últimos 30 dias' }
+        { value: "all", label: "Todos os Períodos" },
+        { value: "2024", label: "2024" },
+        { value: "2023", label: "2023" },
+        { value: "2022", label: "2022" },
+        { value: "recent", label: "Últimos 30 dias" },
       ],
-      heights: ['250px', '300px', '350px', '400px', '450px', '280px', '320px', '380px']
-    }
+      heights: [
+        "250px",
+        "300px",
+        "350px",
+        "400px",
+        "450px",
+        "280px",
+        "320px",
+        "380px",
+      ],
+    };
   },
   computed: {
     filteredGalleryItems() {
-      if (this.selectedPeriod === 'all') {
+      if (this.selectedPeriod === "all") {
         return this.galleryItems;
       }
-      
-      if (this.selectedPeriod === 'recent') {
+
+      if (this.selectedPeriod === "recent") {
         const thirtyDaysAgo = new Date();
         thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        return this.galleryItems.filter(item => 
-          new Date(item.date) >= thirtyDaysAgo
+        return this.galleryItems.filter(
+          (item) => new Date(item.date) >= thirtyDaysAgo
         );
       }
-      
-      return this.galleryItems.filter(item => 
-        new Date(item.date).getFullYear().toString() === this.selectedPeriod
+
+      return this.galleryItems.filter(
+        (item) =>
+          new Date(item.date).getFullYear().toString() === this.selectedPeriod
       );
-    }
+    },
   },
   async mounted() {
     await this.loadGalleryItems();
@@ -144,20 +168,54 @@ export default {
   watch: {
     selectedPeriod() {
       // Trigger any additional filtering logic if needed
-    }
+    },
   },
   methods: {
     async loadGalleryItems() {
       this.loading = true;
       this.error = null;
-      
+
       try {
-        // Fetch gallery items from CMS
-        const response = await apiService.getWithPopulate('/gallery-items', ['image']);
-        this.galleryItems = response.data || [];
+        // 1. FAZ A CHAMADA PARA O ENDPOINT CORRETO DO WORDPRESS
+        // Substitua 'galeria' se o seu slug for diferente.
+        // O parâmetro _embed pode ser útil para obter mais dados no futuro.
+        const response = await apiService.get("/galeria?_embed");
+
+        // --- PASSO DE DEBUG: INSPECIONE ISSO NO CONSOLE DO NAVEGADOR ---
+        console.log("RESPOSTA COMPLETA DA API:", response);
+        console.log(
+          "DADOS DA RESPOSTA (response.data):",
+          response[0].gallery_data
+        );
+        // --- FIM DO PASSO DE DEBUG ---
+
+        // A CORREÇÃO FINAL ESTÁ AQUI:
+        // Usamos 'response' diretamente, pois ele já é o array que precisamos.
+        const galleries = response || [];
+
+        this.galleryItems = galleries.flatMap((gallery) => {
+          // Esta verificação continua sendo uma boa prática
+          if (!gallery.gallery_data || !Array.isArray(gallery.gallery_data)) {
+            return [];
+          }
+
+          return gallery.gallery_data.map((image) => ({
+            id: image.id,
+            title: gallery.title.rendered,
+            date: gallery.date,
+            image: {
+              url: image.url_full,
+              large: image.url_large,
+              medium: image.url_medium,
+            },
+            alt: image.alt,
+            caption: image.caption,
+          }));
+        });
       } catch (error) {
-        this.error = 'Erro ao carregar a galeria. Tente novamente mais tarde.';
-        console.error('Gallery loading error:', error);
+        this.error = "Erro ao carregar a galeria. Tente novamente mais tarde.";
+        // Agora o console.error mostrará o erro original da API, se houver
+        console.error("Gallery loading error:", error);
       } finally {
         this.loading = false;
       }
@@ -166,41 +224,41 @@ export default {
       return this.heights[Math.floor(Math.random() * this.heights.length)];
     },
     formatDate(dateString) {
-      if (!dateString) return 'Data não disponível';
-      
+      if (!dateString) return "Data não disponível";
+
       const date = new Date(dateString);
-      return date.toLocaleDateString('pt-BR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
+      return date.toLocaleDateString("pt-BR", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
       });
     },
     openModal(item) {
       this.selectedImage = item;
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     },
     closeModal() {
       this.selectedImage = null;
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = "auto";
     },
     onImageLoad(event) {
       // Handle successful image load
-      event.target.style.opacity = '1';
+      event.target.style.opacity = "1";
     },
     onImageError(event) {
       // Handle image load error - show placeholder
-      event.target.style.display = 'none';
+      event.target.style.display = "none";
       const placeholder = event.target.nextElementSibling;
       if (placeholder) {
-        placeholder.style.display = 'flex';
+        placeholder.style.display = "flex";
       }
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <style scoped lang="scss">
-@use '@/assets/styles/_variables.scss';
+@use "@/assets/styles/_variables.scss";
 @use "sass:color";
 
 .gallery-page {
@@ -211,13 +269,14 @@ export default {
   overflow: hidden;
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg,
+    background: linear-gradient(
+      90deg,
       transparent,
       rgba(172, 0, 255, 0.3),
       rgba(6, 68, 216, 0.3),
@@ -226,7 +285,7 @@ export default {
   }
 
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -245,7 +304,7 @@ export default {
 .page-title {
   font-size: 3rem;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #ffffff;
   background: linear-gradient(135deg, #ac00ff, #0644d8);
   -webkit-background-clip: text;
   background-clip: text;
@@ -281,22 +340,24 @@ export default {
   &:hover {
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(172, 0, 255, 0.3);
-    color: #FFFFFF;
+    color: #ffffff;
     transform: translateY(-2px);
   }
 
   &.active {
     background: linear-gradient(135deg, #ac00ff, #0644d8);
     border-color: transparent;
-    color: #FFFFFF;
+    color: #ffffff;
     box-shadow: 0 4px 16px rgba(172, 0, 255, 0.3);
   }
 }
 
 // Loading and error states
-.loading-spinner, .error-message, .empty-state {
+.loading-spinner,
+.error-message,
+.empty-state {
   color: rgba(255, 255, 255, 0.8);
-  
+
   i {
     font-size: 3rem;
     background: linear-gradient(135deg, #ac00ff, #0644d8);
@@ -304,8 +365,9 @@ export default {
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
-  
-  p, h5 {
+
+  p,
+  h5 {
     color: rgba(255, 255, 255, 0.8);
   }
 }
@@ -315,8 +377,12 @@ export default {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 // Gallery styles
@@ -352,7 +418,7 @@ export default {
     }
   }
 
-  img {
+  .image {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -369,7 +435,7 @@ export default {
   justify-content: center;
   font-size: 3rem;
   color: rgba(255, 255, 255, 0.4);
-  
+
   i {
     background: linear-gradient(135deg, #ac00ff, #0644d8);
     -webkit-background-clip: text;
@@ -390,14 +456,14 @@ export default {
 }
 
 .image-info {
-  color: #FFFFFF;
-  
+  color: #ffffff;
+
   h6 {
     font-weight: 600;
     margin-bottom: 0.5rem;
     font-size: 1rem;
   }
-  
+
   p {
     font-size: 0.9rem;
     opacity: 0.8;
@@ -430,7 +496,7 @@ export default {
   overflow: hidden;
   backdrop-filter: blur(16px);
 
-  img {
+  .image {
     width: 100%;
     height: auto;
     max-height: 70vh;
@@ -444,7 +510,7 @@ export default {
   right: 1rem;
   background: rgba(0, 0, 0, 0.5);
   border: none;
-  color: #FFFFFF;
+  color: #ffffff;
   width: 40px;
   height: 40px;
   border-radius: 50%;
@@ -462,14 +528,14 @@ export default {
 
 .modal-info {
   padding: 1.5rem;
-  color: #FFFFFF;
+  color: #ffffff;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
-  
+
   h5 {
     margin-bottom: 0.5rem;
     font-weight: 600;
   }
-  
+
   p {
     margin: 0;
     opacity: 0.8;

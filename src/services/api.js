@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 class ApiService {
-  constructor(baseURL = 'http://localhost:1337/api') {
+  // O construtor agora lê as variáveis de ambiente para a configuração inicial.
+  constructor(baseURL = import.meta.env.VITE_API_BASE_URL) {
     this.api = axios.create({
       baseURL,
       headers: {
@@ -9,7 +10,27 @@ class ApiService {
       },
     });
 
-    // Add response interceptor for error handling
+    // INTERCEPTOR DE REQUISIÇÃO (REQUEST)
+    this.api.interceptors.request.use(
+      (config) => {
+        // Pega as credenciais do .env e as adiciona a cada requisição
+        const username = import.meta.env.VITE_API_USERNAME;
+        const password = import.meta.env.VITE_API_PASSWORD;
+
+        if (username && password) {
+          config.auth = {
+            username,
+            password,
+          };
+        }
+        return config;
+      },
+      (error) => {
+        return Promise.reject(error);
+      }
+    );
+
+    // INTERCEPTOR DE RESPOSTA (RESPONSE)
     this.api.interceptors.response.use(
       (response) => response,
       (error) => {
@@ -19,10 +40,30 @@ class ApiService {
     );
   }
 
-  // Generic GET method
-  async get(endpoint, params = {}) {
+  /**
+   * Método GET genérico.
+   * @param {string} endpoint - O endpoint da API (ex: '/posts').
+   * @param {object} config - Configurações extras do Axios (ex: { params: {...} }).
+   * @returns {Promise<any>}
+   */
+  async get(endpoint, config = {}) {
     try {
-      const response = await this.api.get(endpoint, { params });
+      const response = await this.api.get(endpoint, config);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Método especializado para buscar arquivos/imagens como Blob.
+   * O interceptor de autenticação será aplicado automaticamente.
+   */
+  async getBlob(endpoint) {
+    try {
+      const response = await this.api.get(endpoint, {
+        responseType: 'blob',
+      });
       return response.data;
     } catch (error) {
       throw error;

@@ -7,128 +7,223 @@
     </div>
 
     <div class="container">
-      <div class="row align-items-center">
+      <div v-if="loading" class="loading-state text-center">
+        <div class="loading-spinner"></div>
+        <p>Carregando postagem em Destaque...</p>
+      </div>
+
+      <div v-else-if="error" class="error-state text-center">
+        <div class="error-icon">
+          <i class="bi bi-exclamation-triangle"></i>
+        </div>
+        <p>{{ error }}</p>
+      </div>
+
+      <div v-else-if="featuredPost" class="row align-items-center">
         <div class="col-lg-6">
           <div class="posts-content" data-aos="fade-right">
-
-            
             <h2 class="section-title">
               Fique por dentro das <span class="title-accent">Novidades</span>
             </h2>
-            
+
             <div class="featured-post">
               <div class="post-header">
                 <div class="post-date">
                   <i class="bi bi-calendar3"></i>
-                  <span>{{ postDate }}</span>
+                  <span>{{ formatDate(featuredPost.date) }}</span>
                 </div>
               </div>
-              
+
               <h3 class="post-title">
-                Ponte Digital Irá Fazer Oficinas no Sábado!
+                {{ featuredPost.title }}
               </h3>
-              
+
               <p class="post-excerpt">
-                Não perca essa oportunidade única de aprender com nossa equipe especializada. 
-                Workshops exclusivos sobre desenvolvimento web, design e tecnologias emergentes.
+                {{ featuredPost.excerpt }}
               </p>
-              
+
               <div class="post-meta">
                 <div class="author-info">
                   <div class="author-avatar">
-                    <i class="bi bi-person-circle"></i>
+                    <AutenticatedImage
+                      v-if="featuredPost.author.avatarUrl"
+                      :src="featuredPost.author.avatarUrl"
+                      alt="Avatar"
+                      style="
+                        width: 100%;
+                        height: 100%;
+                        border-radius: 50%;
+                        object-fit: cover;
+                      "
+                    />
+                    <i v-else class="bi bi-person-circle"></i>
                   </div>
                   <div class="author-details">
-                    <strong>Jeane Silva</strong>
-                    <span>Coordenadora</span>
+                    <strong>{{ featuredPost.author.name }}</strong>
+                    <span>{{ featuredPost.author.role }}</span>
                   </div>
                 </div>
-            
               </div>
-              
+
               <div class="post-actions">
-                <button class="btn btn-primary post-btn-primary" href="/posts/1">
+                <router-link
+                  class="btn btn-primary post-btn-primary"
+                  :to="'/posts/' + featuredPost.id"
+                >
                   <span>Ler Post</span>
                   <i class="bi bi-arrow-right"></i>
-                </button>
+                </router-link>
               </div>
             </div>
           </div>
         </div>
-        
+
         <div class="col-lg-6">
           <div class="posts-visual" data-aos="fade-left" data-aos-delay="200">
             <div class="visual-container">
               <div class="main-post-card">
                 <div class="card-image">
-                  <div class="image-placeholder">
+                  <AutenticatedImage
+                    v-if="featuredPost.featuredImageUrl"
+                    :src="featuredPost.featuredImageUrl"
+                    :alt="featuredPost.title"
+                    style="
+                      width: 100%;
+                      height: 100%;
+                      object-fit: cover;
+                      border-radius: 1.5rem;
+                    "
+                  />
+                  <div v-else class="image-placeholder">
                     <i class="bi bi-image"></i>
                     <div class="loading-shimmer"></div>
                   </div>
-                  <div class="image-overlay">
-                  </div>
                 </div>
-                
                 <div class="card-pulse"></div>
               </div>
-              
+
               <div class="floating-cards">
-                <div class="mini-card card-1">
+                <div
+                  v-for="(tag, index) in featuredPost.tags"
+                  :key="tag"
+                  class="mini-card"
+                  :class="'card-' + (index + 1)"
+                >
                   <div class="mini-content">
-                    <i class="bi bi-lightning"></i>
-                    <span>Workshop</span>
+                    <i class="bi bi-tag"></i>
+                    <span>{{ tag }}</span>
                   </div>
                 </div>
-                
-                <div class="mini-card card-2">
-                  <div class="mini-content">
-                    <i class="bi bi-people"></i>
-                    <span>Oficinas</span>
-                  </div>
-                </div>
-                
-                <div class="mini-card card-3">
-                  <div class="mini-content">
-                    <i class="bi bi-calendar-event"></i>
-                    <span>Sábado</span>
-                  </div>
-                </div>
-              </div>
-              
-              <div class="connection-lines">
-                <svg width="100%" height="100%" class="connection-svg">
-                  <path d="M50,50 Q150,100 250,50" stroke="rgba(172, 0, 255, 0.3)" stroke-width="2" fill="none">
-                    <animate attributeName="stroke-dasharray" values="0,300;150,150;300,0" dur="3s" repeatCount="indefinite"/>
-                  </path>
-                </svg>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      
-      <div class="posts-footer text-center mt-5" data-aos="fade-up" data-aos-delay="400">
-        <router-link to="/posts" class="btn-view-blog">
-          <span>Ver Todos os Posts</span>
-          <i class="bi bi-arrow-right"></i>
-          <div class="btn-ripple"></div>
-        </router-link>
       </div>
     </div>
   </section>
 </template>
 
 <script>
+import apiService from "@/services/api";
+import AutenticatedImage from "@/components/AuthenticatedImage.vue";
+
 export default {
   name: "PostsSection",
+  components: {
+    AutenticatedImage,
+  },
   data() {
     return {
-      postDate: new Intl.DateTimeFormat("pt-BR", {
-        month: "short",
-        day: "numeric",
-        year: "numeric",
-      }).format(new Date("2025-08-18")),
+      // 1. O estado agora é um único objeto para o post, mais 'loading' e 'error'
+      featuredPost: null,
+      loading: true,
+      error: null,
     };
+  },
+  async created() {
+    // A lógica de busca está agora em um método dedicado para organização
+    await this.loadFeaturedPost();
+    console.log(this.featuredPost);
+  },
+  methods: {
+    /**
+     * Busca os dados usando a sua lógica original de 2 passos e os formata.
+     */
+    async loadFeaturedPost() {
+      this.loading = true;
+      this.error = null;
+      try {
+        // --- SUA LÓGICA ORIGINAL (MANTIDA) ---
+        const homeResponse = await apiService.get("/home");
+
+        // Verificação para garantir que homeResponse e homeResponse[0] existem
+        if (!homeResponse || !homeResponse[0]) {
+          throw new Error(
+            "A resposta da API '/home' está vazia ou em formato inesperado."
+          );
+        }
+        const homeData = homeResponse[0];
+
+        const postIds = homeData.acf.postagem_destaque;
+
+        if (!postIds || postIds.length === 0) {
+          this.loading = false;
+          return;
+        }
+
+        const postsResponse = await apiService.get("/postagem", {
+          params: {
+            // A sua lógica de buscar pelo ID está correta e foi mantida
+            include: postIds.join(","),
+            _embed: true, // Adicionado para buscar dados de autor/tags, se necessário
+          },
+        });
+
+        if (!postsResponse || postsResponse.length === 0) {
+          throw new Error(
+            "O post em destaque com o ID fornecido não foi encontrado."
+          );
+        }
+
+        // --- AQUI ESTÁ A MUDANÇA PRINCIPAL ---
+        // 2. Pegamos APENAS o primeiro post da lista que a API retornou.
+        const postData = postsResponse[0];
+
+        // 3. Mapeamos esse ÚNICO post para o nosso objeto 'featuredPost'.
+        this.featuredPost = {
+          id: postData.id,
+          title: postData.acf.titulo_da_postagem || postData.title.rendered,
+          excerpt: postData.acf.descricao_curta || "", // Usando excerpt do ACF
+          date: postData.date, // A data agora é dinâmica
+
+          // Usando optional chaining (?.) para mais segurança
+          featuredImageUrl: postData.acf.imagem_de_destaque?.url ?? null,
+
+          author: {
+            name:
+              postData.acf.informacoes_do_autor?.nome_do_autor ??
+              "Autor Desconhecido",
+            role: postData.acf.informacoes_do_autor?.cargo_do_autor ?? "",
+            avatarUrl:
+              postData.acf.informacoes_do_autor?.foto_do_autor?.url ?? null,
+          },
+        };
+      } catch (err) {
+        this.error = "Não foi possível carregar o post em destaque.";
+        console.error("Erro ao buscar post:", err);
+      } finally {
+        this.loading = false;
+      }
+    },
+
+    /**
+     * Função auxiliar para formatar a data.
+     */
+    formatDate(dateString) {
+      if (!dateString) return "";
+      const options = { month: "short", day: "numeric", year: "numeric" };
+      return new Date(dateString).toLocaleDateString("pt-BR", options);
+    },
   },
 };
 </script>
@@ -137,11 +232,10 @@ export default {
 @use "@/assets/styles/_variables.scss";
 
 .posts-section {
-  padding: 8rem 0;
+  padding-top: 8rem;
   background: rgb(21, 23, 42);
   position: relative;
   overflow: hidden;
-  height: 105vh;
 }
 
 .section-background {
@@ -158,19 +252,23 @@ export default {
   width: 100%;
   height: 100%;
   opacity: 0.1;
-  
+
   .grid-line {
     position: absolute;
-    background: linear-gradient(45deg, rgba(172, 0, 255, 0.3), rgba(6, 68, 216, 0.3));
+    background: linear-gradient(
+      45deg,
+      rgba(172, 0, 255, 0.3),
+      rgba(6, 68, 216, 0.3)
+    );
     animation: grid-flow 4s ease-in-out infinite;
-    
+
     &:nth-child(odd) {
       width: 1px;
       height: 100%;
       left: calc(var(--i) * 5%);
       animation-delay: calc(var(--i) * 0.1s);
     }
-    
+
     &:nth-child(even) {
       height: 1px;
       width: 100%;
@@ -198,7 +296,7 @@ export default {
   color: rgba(6, 68, 216, 0.9);
   font-size: 1rem;
   font-weight: 500;
-  
+
   i {
     font-size: 1.2rem;
   }
@@ -210,7 +308,7 @@ export default {
   color: #fff;
   margin-bottom: 2rem;
   line-height: 1.2;
-  
+
   .title-accent {
     background: linear-gradient(135deg, #0644d8, #ac00ff);
     -webkit-background-clip: text;
@@ -227,7 +325,7 @@ export default {
   backdrop-filter: blur(16px);
   position: relative;
   transition: all 0.3s ease;
-  
+
   &:hover {
     transform: translateY(-5px);
     border-color: rgba(6, 68, 216, 0.3);
@@ -243,7 +341,11 @@ export default {
 }
 
 .post-badge {
-  background: linear-gradient(135deg, rgba(255, 87, 34, 0.9), rgba(255, 193, 7, 0.9));
+  background: linear-gradient(
+    135deg,
+    rgba(255, 87, 34, 0.9),
+    rgba(255, 193, 7, 0.9)
+  );
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 1.5rem;
@@ -258,7 +360,7 @@ export default {
   gap: 0.5rem;
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.9rem;
-  
+
   i {
     color: rgba(6, 68, 216, 0.7);
   }
@@ -314,7 +416,7 @@ export default {
     display: block;
     font-weight: 600;
   }
-  
+
   span {
     color: rgba(255, 255, 255, 0.6);
     font-size: 0.9rem;
@@ -332,7 +434,7 @@ export default {
   gap: 0.25rem;
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.9rem;
-  
+
   i {
     color: rgba(6, 68, 216, 0.7);
   }
@@ -355,7 +457,7 @@ export default {
   align-items: center;
   gap: 0.5rem;
   transition: all 0.3s ease;
-  
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(6, 68, 216, 0.3);
@@ -374,7 +476,7 @@ export default {
   gap: 0.5rem;
   backdrop-filter: blur(8px);
   transition: all 0.3s ease;
-  
+
   &:hover {
     background: rgba(255, 255, 255, 0.1);
     color: white;
@@ -433,7 +535,12 @@ export default {
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(6, 68, 216, 0.1), transparent);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(6, 68, 216, 0.1),
+    transparent
+  );
   animation: shimmer 2s ease-in-out infinite;
 }
 
@@ -468,7 +575,7 @@ export default {
   color: white;
   cursor: pointer;
   transition: all 0.3s ease;
-  
+
   &:hover {
     transform: scale(1.1);
     box-shadow: 0 10px 30px rgba(6, 68, 216, 0.4);
@@ -500,7 +607,7 @@ export default {
   padding: 0.75rem;
   backdrop-filter: blur(8px);
   animation: float-mini 3s ease-in-out infinite;
-  
+
   .mini-content {
     display: flex;
     align-items: center;
@@ -508,24 +615,24 @@ export default {
     color: rgba(255, 255, 255, 0.8);
     font-size: 0.9rem;
     white-space: nowrap;
-    
+
     i {
       color: rgba(6, 68, 216, 0.8);
     }
   }
-  
+
   &.card-1 {
     top: -320px;
     left: 660px;
     animation-delay: 0s;
   }
-  
+
   &.card-2 {
     top: -50px;
     right: -50px;
     animation-delay: -1s;
   }
-  
+
   &.card-3 {
     bottom: 760px;
     left: -30px;
@@ -570,14 +677,18 @@ export default {
   position: relative;
   overflow: hidden;
   backdrop-filter: blur(8px);
-  
+
   &:hover {
     transform: translateY(-3px);
-    background: linear-gradient(135deg, rgba(6, 68, 216, 0.2), rgba(172, 0, 255, 0.2));
+    background: linear-gradient(
+      135deg,
+      rgba(6, 68, 216, 0.2),
+      rgba(172, 0, 255, 0.2)
+    );
     border-color: rgba(6, 68, 216, 0.5);
     box-shadow: 0 10px 30px rgba(6, 68, 216, 0.2);
     color: white;
-    
+
     .btn-ripple {
       animation: ripple 0.6s linear;
     }
@@ -597,7 +708,8 @@ export default {
 
 // Animations
 @keyframes grid-flow {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.1;
     transform: scale(1);
   }
@@ -617,7 +729,8 @@ export default {
 }
 
 @keyframes pulse-border {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
     transform: scale(1);
   }
@@ -628,7 +741,8 @@ export default {
 }
 
 @keyframes float-mini {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0px) rotate(0deg);
   }
   50% {
@@ -654,18 +768,18 @@ export default {
   .section-title {
     font-size: 2.5rem;
   }
-  
+
   .visual-container {
     width: 400px;
     height: 275px;
     margin-top: 3rem;
   }
-  
+
   .main-post-card {
     width: 320px;
     height: 180px;
   }
-  
+
   .post-actions {
     flex-direction: column;
     align-items: stretch;
@@ -676,28 +790,28 @@ export default {
   .posts-section {
     padding: 4rem 0;
   }
-  
+
   .animated-grid {
     display: none;
   }
-  
+
   .floating-cards {
     display: none;
   }
-  
+
   .featured-post {
     padding: 1.5rem;
   }
-  
+
   .post-title {
     font-size: 1.5rem;
   }
-  
+
   .visual-container {
     width: 300px;
     height: 200px;
   }
-  
+
   .main-post-card {
     width: 280px;
     height: 157px;

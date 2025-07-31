@@ -1,4 +1,5 @@
 <template>
+  <!-- O template (HTML) permanece exatamente o mesmo, com os estados de loading, imagem e erro -->
   <div v-if="loading" class="image-loading">
     <div class="skeleton-box">
       <div class="skeleton-shimmer"></div>
@@ -20,17 +21,16 @@
 </template>
 
 <script>
-import axios from 'axios';
+// 1. MUDANÇA: Importamos nosso apiService em vez do axios.
+import apiService from '@/services/api'; // Ajuste o caminho se necessário
 
 export default {
   name: 'AuthenticatedImage',
   props: {
-    // A URL original e protegida da imagem
     src: {
       type: String,
       required: true,
     },
-    // O texto alternativo para a imagem
     alt: {
       type: String,
       default: 'Imagem',
@@ -38,14 +38,13 @@ export default {
   },
   data() {
     return {
-      localSrc: null, // Armazenará a URL local da imagem (blob URL)
+      localSrc: null,
       loading: true,
     };
   },
   watch: {
-    // Usamos um 'watch' para que a imagem seja recarregada se a URL mudar
     src: {
-      immediate: true, // Executa o handler assim que o componente é criado
+      immediate: true,
       async handler(newSrc) {
         if (!newSrc) {
           this.loading = false;
@@ -55,23 +54,16 @@ export default {
         this.loading = true;
         this.localSrc = null;
 
-        const config = {
-          auth: {
-            username: 'terrace',
-            password: 'earsplitting',
-          },
-          // ESSENCIAL: Diz ao axios para tratar a resposta como dados binários
-          responseType: 'blob',
-        };
-
         try {
-          const response = await axios.get(newSrc, config);
-          const blob = response.data;
+          // 2. MUDANÇA: A lógica de autenticação foi removida daqui.
+          // Usamos o método 'getBlob' do nosso serviço, que já é autenticado
+          // pelo interceptor. A chamada fica muito mais limpa.
+          const blob = await apiService.getBlob(newSrc);
           
-          // Cria uma URL temporária no navegador para o dado binário da imagem
           this.localSrc = URL.createObjectURL(blob);
         } catch (error) {
-          console.error('Erro ao buscar imagem autenticada:', error);
+          // O erro já é logado no console pelo interceptor do apiService.
+          console.error(`Erro ao buscar a imagem ${newSrc}:`, error);
         } finally {
           this.loading = false;
         }
@@ -80,11 +72,11 @@ export default {
   },
   methods: {
     onImageLoad() {
-      // Image loaded successfully
+      // Lógica para quando a imagem carregar, se necessário.
     }
   },
   beforeUnmount() {
-    // IMPORTANTE: Libera a memória usada pela blob URL quando o componente é destruído
+    // A lógica de limpeza da memória permanece a mesma e é muito importante.
     if (this.localSrc) {
       URL.revokeObjectURL(this.localSrc);
     }
@@ -93,6 +85,7 @@ export default {
 </script>
 
 <style scoped lang="scss">
+/* Os estilos permanecem exatamente os mesmos */
 .image-loading {
   width: 100%;
   height: 100%;

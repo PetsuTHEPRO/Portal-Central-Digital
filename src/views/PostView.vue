@@ -137,6 +137,7 @@
 
 <script>
 import blogRepository from '@/services/blogRepository';
+import apiService from '@/services/api';
 
 export default {
   name: 'PostView',
@@ -168,9 +169,41 @@ export default {
       this.error = null;
       
       try {
-        // Try to fetch from CMS first
-        const response = await blogRepository.getPostById(this.id);
-        this.post = response.data;
+        // --- SUA LÓGICA ORIGINAL (MANTIDA) ---
+        const postsResponse = await apiService.get(`/postagem/${this.id}`);
+
+        if (!postsResponse || postsResponse.length === 0) {
+          throw new Error(
+            "O post em destaque com o ID fornecido não foi encontrado."
+          );
+        }
+
+        console.log(postsResponse)
+
+        // --- AQUI ESTÁ A MUDANÇA PRINCIPAL ---
+        // 2. Pegamos APENAS o primeiro post da lista que a API retornou.
+        const postData = postsResponse;
+        
+        // 3. Mapeamos esse ÚNICO post para o nosso objeto 'featuredPost'.
+        this.post = {
+          id: postData.id,
+          title: postData.acf.titulo_da_postagem || postData.title.rendered,
+          excerpt: postData.acf.descricao_curta || "", // Usando excerpt do ACF
+          content: postData.acf.conteudo_postagem, // Contéudo HTML do post
+          date: postData.date, // A data agora é dinâmica
+          // Usando oposttional chaining (?.) para mais segurança
+          featuredImageUrl: postData.acf.imagem_de_destaque?.url ?? null,
+
+          author: {
+            name:
+              postData.acf.informacoes_do_autor?.nome_do_autor ??
+              "Autor Desconhecido",
+            role: postData.acf.informacoes_do_autor?.cargo_do_autor ?? "",
+            avatarUrl:
+              postData.acf.informacoes_do_autor?.foto_do_autor?.url ?? null,
+          },
+        };
+        //this.post = response.data;
       } catch (error) {
         console.error('Post loading error:', error);
         
@@ -534,6 +567,7 @@ export default {
 
 .post-body {
   position: relative;
+  color: white;
   z-index: 2;
   
   :deep(p) {
