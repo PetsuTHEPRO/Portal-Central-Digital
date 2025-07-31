@@ -3,7 +3,9 @@
     <div class="container">
       <header class="blog-header text-center">
         <h1 class="page-title">Postagens</h1>
-        <p class="page-subtitle">Fique por dentro das últimas novidades e artigos do Ponte Digital.</p>
+        <p class="page-subtitle">
+          Fique por dentro das últimas novidades e artigos do Ponte Digital.
+        </p>
       </header>
 
       <!-- Loading state -->
@@ -24,19 +26,25 @@
 
       <!-- Posts list -->
       <div v-else-if="paginatedPosts.length > 0" class="posts-list">
-        <article v-for="post in paginatedPosts" :key="post.id" class="post-item">
+        <article
+          v-for="post in paginatedPosts"
+          :key="post.id"
+          class="post-item"
+        >
           <div class="post-card">
             <div class="post-header">
               <div class="post-category" v-if="post.category">
                 {{ post.category }}
               </div>
               <h2 class="post-title">
-                <router-link :to="'/posts/' + post.id">{{ post.title }}</router-link>
+                <router-link :to="'/posts/' + post.id">{{
+                  post.title
+                }}</router-link>
               </h2>
               <div class="post-meta">
                 <div class="meta-item">
                   <i class="bi bi-person"></i>
-                  <span>{{ post.author || 'Autor não informado' }}</span>
+                  <span>{{ post.author || "Autor não informado" }}</span>
                 </div>
                 <div class="meta-item">
                   <i class="bi bi-calendar3"></i>
@@ -48,16 +56,24 @@
                 </div>
               </div>
             </div>
-            
+
             <div class="post-content">
-              <p class="post-description">{{ post.summary || post.description || 'Sem descrição disponível' }}</p>
-              
+              <p class="post-description">
+                {{
+                  post.summary || post.description || "Sem descrição disponível"
+                }}
+              </p>
+
               <div class="post-actions">
                 <router-link :to="'/posts/' + post.id" class="btn btn-primary">
                   Ler mais <i class="bi bi-arrow-right"></i>
                 </router-link>
                 <div class="post-tags" v-if="post.tags && post.tags.length > 0">
-                  <span v-for="tag in post.tags.slice(0, 3)" :key="tag" class="tag">
+                  <span
+                    v-for="tag in post.tags.slice(0, 3)"
+                    :key="tag"
+                    class="tag"
+                  >
                     {{ tag }}
                   </span>
                 </div>
@@ -77,9 +93,13 @@
       </div>
 
       <!-- Pagination -->
-      <nav v-if="totalPages > 1" aria-label="Navegação de Posts" class="pagination-nav">
+      <nav
+        v-if="totalPages > 1"
+        aria-label="Navegação de Posts"
+        class="pagination-nav"
+      >
         <div class="pagination-container">
-          <button 
+          <button
             class="pagination-btn"
             :class="{ disabled: currentPage === 1 }"
             @click="prevPage"
@@ -88,7 +108,7 @@
             <i class="bi bi-chevron-left"></i>
             Anterior
           </button>
-          
+
           <div class="page-numbers">
             <button
               v-for="page in totalPages"
@@ -100,8 +120,8 @@
               {{ page }}
             </button>
           </div>
-          
-          <button 
+
+          <button
             class="pagination-btn"
             :class="{ disabled: currentPage === totalPages }"
             @click="nextPage"
@@ -117,17 +137,17 @@
 </template>
 
 <script>
-import apiService from '@/services/api';
+import apiService from "@/services/api";
 
 export default {
-  name: 'BlogView',
+  name: "BlogView",
   data() {
     return {
       currentPage: 1,
       itemsPerPage: 5,
       allPosts: [],
       loading: false,
-      error: null
+      error: null,
     };
   },
   computed: {
@@ -138,105 +158,147 @@ export default {
       const start = (this.currentPage - 1) * this.itemsPerPage;
       const end = start + this.itemsPerPage;
       return this.allPosts.slice(start, end);
-    }
+    },
   },
   async mounted() {
-    await this.loadPosts();
+    await this.fetchPosts();
   },
   methods: {
+    async fetchPosts() {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const url =
+          "https://opulent-journey.localsite.io/wp-json/wp/v2/postagem";
+        const config = {
+          auth: {
+            username: "terrace",
+            password: "earsplitting",
+          },
+        };
+        const response = await apiService.get(url, config);
+        console.log(response)
+        // Mapeamos e guardamos os dados no 'state'
+        this.posts = response.map((post) => ({
+          id: post.id,
+          title: post.acf.titulo_da_postagem || postData.title.rendered,
+          author: post.acf.informacoes_do_autor?.nome_do_autor ??
+              "Autor Desconhecido",
+          date: "2025-08-18",
+          summary: post.acf.descricao_curta || "",
+          category: post.acf.categoria,
+          readTime: post.acf.tempo_leitura,
+        }));
+        this.allPosts = this.posts
+        console.log("!", this.posts)
+      } catch (err) {
+        this.error = "Não foi possível carregar os projetos.";
+        console.error("Erro ao buscar projetos:", err);
+      } finally {
+        this.loading = false;
+      }
+    },
     async loadPosts() {
       this.loading = true;
       this.error = null;
-      
+
       try {
         // Fetch posts from CMS
-        const response = await apiService.getWithPopulate('/posts', ['author', 'category', 'featuredImage']);
+        const response = await apiService.get("/postagem");
+        console.log(response);
         this.allPosts = response.data || [];
       } catch (error) {
-        this.error = 'Erro ao carregar as postagens. Tente novamente mais tarde.';
-        console.error('Posts loading error:', error);
-        
+        this.error =
+          "Erro ao carregar as postagens. Tente novamente mais tarde.";
+        console.error("Posts loading error:", error);
+
         // Fallback to mock data in case of error
         this.allPosts = [
-          { 
-            id: 'oficinas-no-sabado', 
-            title: 'Ponte Digital Irá Fazer Oficinas no Sábado!', 
-            author: 'Jeane', 
-            date: '2025-08-18', 
-            summary: 'Venha participar de nossas oficinas práticas de tecnologia e inovação. Uma oportunidade única para aprender e colaborar.',
-            category: 'Eventos',
+          {
+            id: "oficinas-no-sabado",
+            title: "Ponte Digital Irá Fazer Oficinas no Sábado!",
+            author: "Jeane",
+            date: "2025-08-18",
+            summary:
+              "Venha participar de nossas oficinas práticas de tecnologia e inovação. Uma oportunidade única para aprender e colaborar.",
+            category: "Eventos",
             readTime: 3,
-            tags: ['Oficinas', 'Tecnologia', 'Comunidade']
+            tags: ["Oficinas", "Tecnologia", "Comunidade"],
           },
-          { 
-            id: 'novo-projeto-ia', 
-            title: 'Lançamento do Novo Projeto de Inteligência Artificial', 
-            author: 'Carlos', 
-            date: '2025-08-15', 
-            summary: 'Apresentamos nosso mais novo projeto focado em soluções de IA para a comunidade local, visando otimizar processos e gerar impacto social.',
-            category: 'Projetos',
+          {
+            id: "novo-projeto-ia",
+            title: "Lançamento do Novo Projeto de Inteligência Artificial",
+            author: "Carlos",
+            date: "2025-08-15",
+            summary:
+              "Apresentamos nosso mais novo projeto focado em soluções de IA para a comunidade local, visando otimizar processos e gerar impacto social.",
+            category: "Projetos",
             readTime: 5,
-            tags: ['IA', 'Inovação', 'Projetos']
+            tags: ["IA", "Inovação", "Projetos"],
           },
-          { 
-            id: 'parceria-com-universidade', 
-            title: 'Firmamos Parceria com a Universidade Federal', 
-            author: 'Admin', 
-            date: '2025-08-10', 
-            summary: 'Uma nova aliança estratégica que irá expandir nossas pesquisas e o alcance de nossos programas educacionais.',
-            category: 'Parcerias',
+          {
+            id: "parceria-com-universidade",
+            title: "Firmamos Parceria com a Universidade Federal",
+            author: "Admin",
+            date: "2025-08-10",
+            summary:
+              "Uma nova aliança estratégica que irá expandir nossas pesquisas e o alcance de nossos programas educacionais.",
+            category: "Parcerias",
             readTime: 4,
-            tags: ['Parceria', 'Educação', 'Universidade']
+            tags: ["Parceria", "Educação", "Universidade"],
           },
-          { 
-            id: 'inscricoes-abertas-2025', 
-            title: 'Inscrições Abertas para o Programa 2025.2', 
-            author: 'Ana', 
-            date: '2025-08-05', 
-            summary: 'Não perca a chance de fazer parte da nossa próxima turma. As vagas são limitadas, garanta já a sua!',
-            category: 'Inscrições',
+          {
+            id: "inscricoes-abertas-2025",
+            title: "Inscrições Abertas para o Programa 2025.2",
+            author: "Ana",
+            date: "2025-08-05",
+            summary:
+              "Não perca a chance de fazer parte da nossa próxima turma. As vagas são limitadas, garanta já a sua!",
+            category: "Inscrições",
             readTime: 2,
-            tags: ['Inscrições', 'Programa', 'Vagas']
+            tags: ["Inscrições", "Programa", "Vagas"],
           },
-          { 
-            id: 'resumo-evento-julho', 
-            title: 'Resumo do Nosso Último Evento de Julho', 
-            author: 'Pedro', 
-            date: '2025-08-01', 
-            summary: 'Confira os melhores momentos, palestras e resultados do nosso encontro mensal que reuniu mais de 100 pessoas.',
-            category: 'Eventos',
+          {
+            id: "resumo-evento-julho",
+            title: "Resumo do Nosso Último Evento de Julho",
+            author: "Pedro",
+            date: "2025-08-01",
+            summary:
+              "Confira os melhores momentos, palestras e resultados do nosso encontro mensal que reuniu mais de 100 pessoas.",
+            category: "Eventos",
             readTime: 6,
-            tags: ['Evento', 'Resumo', 'Comunidade']
-          }
+            tags: ["Evento", "Resumo", "Comunidade"],
+          },
         ];
       } finally {
         this.loading = false;
       }
     },
     formatDate(dateString) {
-      if (!dateString) return 'Data não disponível';
-      
-      const options = { year: 'numeric', month: 'long', day: 'numeric' };
-      return new Date(dateString).toLocaleDateString('pt-BR', options);
+      if (!dateString) return "Data não disponível";
+
+      const options = { year: "numeric", month: "long", day: "numeric" };
+      return new Date(dateString).toLocaleDateString("pt-BR", options);
     },
     goToPage(pageNumber) {
       this.currentPage = pageNumber;
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: "smooth" });
     },
     nextPage() {
       if (this.currentPage < this.totalPages) {
         this.currentPage++;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
     },
     prevPage() {
       if (this.currentPage > 1) {
         this.currentPage--;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: "smooth" });
       }
-    }
-  }
-}
+    },
+  },
+};
 </script>
 
 <style scoped lang="scss">
@@ -251,13 +313,14 @@ export default {
   overflow: hidden;
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg,
+    background: linear-gradient(
+      90deg,
       transparent,
       rgba(172, 0, 255, 0.3),
       rgba(6, 68, 216, 0.3),
@@ -266,7 +329,7 @@ export default {
   }
 
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -289,7 +352,7 @@ export default {
 .page-title {
   font-size: 3rem;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #ffffff;
   background: linear-gradient(135deg, #ac00ff, #0644d8);
   -webkit-background-clip: text;
   background-clip: text;
@@ -306,10 +369,12 @@ export default {
 }
 
 // Loading and error states
-.loading-spinner, .error-message, .empty-state {
+.loading-spinner,
+.error-message,
+.empty-state {
   color: rgba(255, 255, 255, 0.8);
   padding: 3rem 0;
-  
+
   i {
     font-size: 3rem;
     background: linear-gradient(135deg, #ac00ff, #0644d8);
@@ -317,8 +382,9 @@ export default {
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
-  
-  p, h5 {
+
+  p,
+  h5 {
     color: rgba(255, 255, 255, 0.8);
   }
 }
@@ -328,8 +394,12 @@ export default {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .posts-list {
@@ -352,7 +422,7 @@ export default {
   overflow: hidden;
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -371,7 +441,7 @@ export default {
     transform: translateY(-5px);
     border-color: rgba(172, 0, 255, 0.3);
     box-shadow: 0 12px 40px rgba(6, 68, 216, 0.2);
-    
+
     &::before {
       opacity: 1;
     }
@@ -385,7 +455,7 @@ export default {
 .post-category {
   display: inline-block;
   background: linear-gradient(135deg, #ac00ff, #0644d8);
-  color: #FFFFFF;
+  color: #ffffff;
   padding: 0.4rem 1rem;
   border-radius: 2rem;
   font-size: 0.85rem;
@@ -400,10 +470,10 @@ export default {
   font-weight: 600;
   margin-bottom: 1rem;
   line-height: 1.3;
-  
+
   a {
     text-decoration: none;
-    color: #FFFFFF;
+    color: #ffffff;
     transition: all 0.3s ease;
 
     &:hover {
@@ -455,7 +525,7 @@ export default {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #0644D8, #ac00ff);
+  background: linear-gradient(135deg, #0644d8, #ac00ff);
   border: none;
   color: white;
   padding: 0.75rem 1.5rem;
@@ -466,18 +536,18 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(6, 68, 216, 0.4);
     text-decoration: none;
     color: white;
   }
-  
+
   i {
     transition: transform 0.3s ease;
   }
-  
+
   &:hover i {
     transform: translateX(3px);
   }
@@ -501,7 +571,7 @@ export default {
   &:hover {
     background: rgba(172, 0, 255, 0.2);
     border-color: rgba(172, 0, 255, 0.3);
-    color: #FFFFFF;
+    color: #ffffff;
   }
 }
 
@@ -535,7 +605,7 @@ export default {
   &:hover:not(.disabled) {
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(172, 0, 255, 0.3);
-    color: #FFFFFF;
+    color: #ffffff;
     transform: translateY(-2px);
   }
 
@@ -568,13 +638,13 @@ export default {
   &:hover {
     background: rgba(255, 255, 255, 0.1);
     border-color: rgba(172, 0, 255, 0.3);
-    color: #FFFFFF;
+    color: #ffffff;
   }
 
   &.active {
     background: linear-gradient(135deg, #ac00ff, #0644d8);
     border-color: transparent;
-    color: #FFFFFF;
+    color: #ffffff;
     box-shadow: 0 4px 16px rgba(172, 0, 255, 0.3);
   }
 }
@@ -592,7 +662,7 @@ export default {
   .post-card {
     padding: 2rem;
   }
-  
+
   .post-title {
     font-size: 1.75rem;
   }

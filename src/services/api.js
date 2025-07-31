@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 class ApiService {
+  // O construtor agora lê as variáveis de ambiente para a configuração inicial.
   constructor(baseURL = import.meta.env.VITE_API_BASE_URL) {
     this.api = axios.create({
       baseURL,
@@ -48,6 +49,21 @@ class ApiService {
   async get(endpoint, config = {}) {
     try {
       const response = await this.api.get(endpoint, config);
+      return response.data;
+    } catch (error) {
+      throw error;
+    }
+  }
+
+  /**
+   * Método especializado para buscar arquivos/imagens como Blob.
+   * O interceptor de autenticação será aplicado automaticamente.
+   */
+  async getBlob(endpoint) {
+    try {
+      const response = await this.api.get(endpoint, {
+        responseType: 'blob',
+      });
       return response.data;
     } catch (error) {
       throw error;

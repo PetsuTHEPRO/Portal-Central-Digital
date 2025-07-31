@@ -56,7 +56,7 @@
                 </div>
               </div>
               <div v-else class="visual-image">
-                <img :src="project.imagemDestaqueUrl" :alt="project.title" />
+                <AuthenticatedImage :src="project.imagemDestaqueUrl" :alt="project.title" />
                 <div class="image-overlay">
                   <div class="overlay-content">
                     <i class="bi bi-eye"></i>
@@ -110,10 +110,16 @@
 </template>
 
 <script>
-import axios from 'axios';
+// 1. Importe o seu apiService e o AuthenticatedImage
+import apiService from '@/services/api'; // Ajuste o caminho se necessário
+import AuthenticatedImage from '@/components/AuthenticatedImage.vue'; // Ajuste o caminho
 
 export default {
   name: "ProjectsSection",
+  components: {
+    // 2. Registre o componente para uso no template
+    AuthenticatedImage,
+  },
   emits: ['view-details'],
   data() {
     return {
@@ -123,13 +129,13 @@ export default {
     };
   },
   async created() {
-    const config = { auth: { username: 'terrace', password: 'earsplitting' } };
-
+    // 3. O método created agora é muito mais limpo!
     try {
-      const homeUrl = "https://opulent-journey.localsite.io/wp-json/wp/v2/home";
-      const homeResponse = await axios.get(homeUrl, config);
+      // Não precisamos mais da 'config' de autenticação aqui. O interceptor cuida disso.
+      // Usamos apenas os endpoints, pois a baseURL já está na ApiService.
+      const homeResponse = await apiService.get('/home');
       
-      const homeData = homeResponse.data[0]; 
+      const homeData = homeResponse[0]; 
       const projectIds = homeData.acf.projetos_destaque;
 
       if (!projectIds || projectIds.length === 0) {
@@ -137,23 +143,25 @@ export default {
         return;
       }
 
-      const projectsUrl = `https://opulent-journey.localsite.io/wp-json/wp/v2/projetos?include=${projectIds.join(',')}`;
-      
-      const projectsResponse = await axios.get(projectsUrl, config);
+      // Usamos o segundo argumento do método 'get' para passar parâmetros de query
+      const projectsResponse = await apiService.get('/projetos', {
+        params: {
+          include: projectIds.join(','),
+        }
+      });
 
-      this.featuredProjects = projectsResponse.data.map(project => ({
+      // O mapeamento dos dados permanece o mesmo
+      this.featuredProjects = projectsResponse.map(project => ({
         id: project.id,
         title: project.title.rendered,
         resumo: project.acf.resumo_projeto || project.excerpt.rendered,
+        // A URL da imagem é passada para o AuthenticatedImage
         imagemDestaqueUrl: project.acf.imagem_de_destaque ? project.acf.imagem_de_destaque.url : null,
-        content: project.content.rendered,
-        integrantes: project.acf.integrantes_projeto || [],
-        galeria: project.acf.galeria_do_projeto || [],
         status: project.acf.status_do_projeto
       }));
 
     } catch (error) {
-      console.error("Erro ao buscar projetos em destaque:", error);
+      // O erro já é logado pelo interceptor, aqui apenas atualizamos a UI
       this.error = "Não foi possível carregar os projetos.";
     } finally {
       this.loading = false;
