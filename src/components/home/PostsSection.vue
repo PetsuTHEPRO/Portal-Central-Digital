@@ -206,7 +206,13 @@ export default {
             avatarUrl:
               postData.acf.informacoes_do_autor?.foto_do_autor?.url ?? null,
           },
+
+          // Adicionando as tags para os mini-cards flutuantes
+          tags: postData.acf.tags || postData._embedded?.['wp:term']?.[1] || ['Tecnologia', 'Inovação', 'Digital'],
         };
+        
+        // Debug: verificar se as tags estão sendo carregadas
+        console.log('Tags carregadas:', this.featuredPost.tags);
       } catch (err) {
         this.error = "Não foi possível carregar o post em destaque.";
         console.error("Erro ao buscar post:", err);
@@ -494,6 +500,7 @@ export default {
   position: relative;
   width: 500px;
   height: 350px;
+  overflow: visible;
 }
 
 .main-post-card {
@@ -550,37 +557,7 @@ export default {
   animation: shimmer 2s ease-in-out infinite;
 }
 
-.image-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: all 0.4s ease;
-}
 
-.view-post-button {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
-  color: white;
-  background: linear-gradient(135deg, #0644d8, #ac00ff);
-  padding: 1.5rem 2rem;
-  border-radius: 1rem;
-  transition: all 0.3s ease;
-
-  &:hover {
-    transform: scale(1.1);
-    box-shadow: 0 10px 30px rgba(6, 68, 216, 0.4);
-  }
-}
 
 .card-pulse {
   position: absolute;
@@ -595,18 +572,25 @@ export default {
 
 .floating-cards {
   position: absolute;
+  top: 0;
+  left: 0;
   width: 100%;
   height: 100%;
+  z-index: 5;
+  pointer-events: none;
+  overflow: visible;
 }
 
 .mini-card {
   position: absolute;
-  background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(6, 68, 216, 0.3);
   border-radius: 0.75rem;
   padding: 0.75rem;
   backdrop-filter: blur(8px);
   animation: float-mini 3s ease-in-out infinite;
+  z-index: 10;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 
   .mini-content {
     display: flex;
@@ -622,20 +606,20 @@ export default {
   }
 
   &.card-1 {
-    top: -320px;
-    left: 660px;
+    top: -15px;
+    right: -60px;
     animation-delay: 0s;
   }
 
   &.card-2 {
-    top: -50px;
-    right: -50px;
+    top: 40%;
+    right: -70px;
     animation-delay: -1s;
   }
 
   &.card-3 {
-    bottom: 760px;
-    left: -30px;
+    bottom: -15px;
+    left: -60px;
     animation-delay: -2s;
   }
 }
@@ -771,11 +755,29 @@ export default {
     width: 350px;
     height: 250px;
     margin-top: 3rem;
+    overflow: visible;
   }
 
   .main-post-card {
     width: 320px;
     height: 220px;
+  }
+
+  .mini-card {
+    &.card-1 {
+      top: -10px;
+      right: -45px;
+    }
+
+    &.card-2 {
+      top: 35%;
+      right: -50px;
+    }
+
+    &.card-3 {
+      bottom: -10px;
+      left: -45px;
+    }
   }
 
   .post-actions {
@@ -808,11 +810,29 @@ export default {
   .visual-container {
     width: 300px;
     height: 200px;
+    overflow: visible;
   }
 
   .main-post-card {
     width: 280px;
     height: 180px;
+  }
+
+  .mini-card {
+    &.card-1 {
+      top: -8px;
+      right: -35px;
+    }
+
+    &.card-2 {
+      top: 30%;
+      right: -40px;
+    }
+
+    &.card-3 {
+      bottom: -8px;
+      left: -35px;
+    }
   }
 }
 </style>

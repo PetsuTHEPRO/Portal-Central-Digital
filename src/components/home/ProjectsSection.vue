@@ -39,7 +39,7 @@
           :data-aos="'fade-up'"
           :data-aos-delay="index * 100"
         >
-          <div class="project-card" @click="$emit('view-details', project)">
+          <div class="project-card" @click="openProjectModal(project)">
             <div class="card-header">
               <div class="project-status">
                 <div class="status-dot"></div>
@@ -56,13 +56,7 @@
                 </div>
               </div>
               <div v-else class="visual-image">
-                <AuthenticatedImage :src="project.imagemDestaqueUrl" :alt="project.title" />
-                <div class="image-overlay">
-                  <div class="overlay-content">
-                    <i class="bi bi-eye"></i>
-                    <span>Ver Projeto</span>
-                  </div>
-                </div>
+                <img :src="project.imagemDestaqueUrl" :alt="project.title" />
               </div>
             </div>
 
@@ -77,7 +71,7 @@
                     <span class="tech-tag">Design</span>
                   </div>
                 </div>
-                <button class="project-btn">
+                <button class="project-btn" @click.stop="openProjectModal(project)" type="button">
                   <i class="bi bi-arrow-right"></i>
                 </button>
               </div>
@@ -106,19 +100,26 @@
         </router-link>
       </div>
     </div>
+    
+    <!-- Modal de Detalhes do Projeto -->
+    <ProjectModal 
+      ref="projectModal"
+      :project="selectedProject"
+      @close="closeModal"
+    />
   </section>
 </template>
 
 <script>
-// 1. Importe o seu apiService e o AuthenticatedImage
+// 1. Importe o seu apiService
 import apiService from '@/services/api'; // Ajuste o caminho se necessário
-import AuthenticatedImage from '@/components/AuthenticatedImage.vue'; // Ajuste o caminho
+import ProjectModal from '@/components/ProjectModal.vue';
 
 export default {
   name: "ProjectsSection",
   components: {
     // 2. Registre o componente para uso no template
-    AuthenticatedImage,
+    ProjectModal,
   },
   emits: ['view-details'],
   data() {
@@ -126,38 +127,32 @@ export default {
       featuredProjects: [],
       loading: true,
       error: null,
+      selectedProject: null,
     };
   },
   async created() {
-    // 3. O método created agora é muito mais limpo!
+    // 3. Buscar os 3 últimos projetos
     try {
-      // Não precisamos mais da 'config' de autenticação aqui. O interceptor cuida disso.
-      // Usamos apenas os endpoints, pois a baseURL já está na ApiService.
-      const homeResponse = await apiService.get('/home');
-      
-      const homeData = homeResponse[0]; 
-      const projectIds = homeData.acf.projetos_destaque;
-
-      if (!projectIds || projectIds.length === 0) {
-        this.loading = false;
-        return;
-      }
-
-      // Usamos o segundo argumento do método 'get' para passar parâmetros de query
+      // Buscar todos os projetos, ordenados por data de criação (mais recentes primeiro)
       const projectsResponse = await apiService.get('/projetos', {
         params: {
-          include: projectIds.join(','),
+          per_page: 3, // Limitar a 3 projetos
+          orderby: 'date', // Ordenar por data
+          order: 'desc' // Ordem decrescente (mais recentes primeiro)
         }
       });
 
-      // O mapeamento dos dados permanece o mesmo
+      // O mapeamento dos dados
       this.featuredProjects = projectsResponse.map(project => ({
         id: project.id,
         title: project.title.rendered,
         resumo: project.acf.resumo_projeto || project.excerpt.rendered,
+        description: project.content.rendered,
         // A URL da imagem é passada para o AuthenticatedImage
         imagemDestaqueUrl: project.acf.imagem_de_destaque ? project.acf.imagem_de_destaque.url : null,
-        status: project.acf.status_do_projeto
+        status: project.acf.status_do_projeto || 'Ativo',
+        integrantes: project.acf.integrantes || [],
+        galeria: project.acf.galeria || []
       }));
 
     } catch (error) {
@@ -165,6 +160,20 @@ export default {
       this.error = "Não foi possível carregar os projetos.";
     } finally {
       this.loading = false;
+    }
+  },
+  methods: {
+    openProjectModal(project) {
+      this.selectedProject = project;
+      // Aguarda o próximo tick para garantir que o projeto foi atualizado
+      this.$nextTick(() => {
+        if (this.$refs.projectModal) {
+          this.$refs.projectModal.openModal();
+        }
+      });
+    },
+    closeModal() {
+      this.selectedProject = null;
     }
   },
 };
@@ -357,10 +366,6 @@ export default {
     }
     
     .visual-image {
-      .image-overlay {
-        opacity: 1;
-      }
-      
       img {
         transform: scale(1.1);
       }
@@ -462,37 +467,6 @@ export default {
     object-fit: cover;
     transition: transform 0.4s ease;
   }
-  
-  .image-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    backdrop-filter: blur(4px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    opacity: 0;
-    transition: opacity 0.4s ease;
-    
-    .overlay-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-      color: white;
-      
-      i {
-        font-size: 2rem;
-      }
-      
-      span {
-        font-weight: 500;
-      }
-    }
-  }
 }
 
 .card-content {
@@ -549,6 +523,10 @@ export default {
   justify-content: center;
   transition: all 0.3s ease;
   backdrop-filter: blur(8px);
+  cursor: pointer;
+  position: relative;
+  z-index: 3;
+  pointer-events: auto !important;
   
   i {
     font-size: 1rem;
@@ -567,6 +545,7 @@ export default {
   opacity: 0;
   transition: opacity 0.4s ease;
   filter: blur(8px);
+  pointer-events: none;
 }
 
 .section-actions {

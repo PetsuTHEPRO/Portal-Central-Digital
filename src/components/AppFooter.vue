@@ -12,7 +12,7 @@
             />
             <i v-else class="bi bi-image"></i>
           </div>
-          <p class="footer-text">O Programa Ponte Digital conecta o IFMA à comunidade, promovendo inclusão digital e capacitação tecnológica.</p>
+          <p class="footer-text">Acompanhe nossas redes sociais para ficar por dentro das novidades!</p>
           <div class="social-icons">
             <a href="#"><i class="bi bi-facebook"></i></a>
             <a href="#"><i class="bi bi-twitter"></i></a>

@@ -37,12 +37,13 @@ export const useProjectStore = defineStore('projects', {
         this.projects = response.data.map((project) => ({
           id: project.id,
           title: project.title.rendered,
-          description: project.content.rendered,
-          content: project.acf.resumo_projeto,
+          description: project.content.rendered, // Descrição completa para o modal
+          resumo: project.acf.resumo_projeto || project.excerpt.rendered, // Resumo para o card
+          content: project.acf.resumo_projeto || project.excerpt.rendered, // Para compatibilidade
           integrantes: project.acf.integrantes_projeto || [],
           imagemDestaqueUrl: project.acf.imagem_de_destaque ? project.acf.imagem_de_destaque.url : null,
           galeria: project.acf.galeria_do_projeto || [],
-          status: project.acf.status_do_projeto
+          status: project.acf.status_do_projeto || 'Ativo'
         }));
       } catch (err) {
         this.error = "Não foi possível carregar os projetos.";

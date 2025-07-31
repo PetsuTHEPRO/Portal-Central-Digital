@@ -32,6 +32,5 @@ export const useHomeStore = defineStore('home', {
     }
   },
 
-  // 3. Habilitamos a persistência para o F5 não precisar recarregar
-  persist: true,
+
 })

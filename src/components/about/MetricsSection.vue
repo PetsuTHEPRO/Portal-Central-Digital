@@ -38,10 +38,10 @@ export default {
   data() {
     return {
       metrics: [
-        { value: '200+', title: 'Comunidades Alcançadas', description: 'Já impactamos dezenas de bairros e localidades por meio de ações educativas e tecnológicas.', isDark: true },
-        { value: '99%', title: 'Satisfação dos Participantes', description: 'A maioria dos envolvidos reconhece o programa como transformador e essencial para sua formação digital.' },
-        { value: '34+', title: 'Projetos Realizados', description: 'Desde oficinas até plataformas digitais, promovemos soluções reais para desafios sociais.' },
-        { value: '100+', title: 'Voluntários Envolvidos', description: 'Alunos, professores e parceiros colaboram ativamente para levar conhecimento à comunidade.' }
+        { value: '+20', title: 'Comunidades Alcançadas', description: 'Já impactamos dezenas de escolas por meio de ações educativas e tecnológicas.', isDark: true },
+        { value: '99%', title: 'Satisfação dos Participantes', description: 'A maioria dos envolvidos reconhece o programa como transformador e essencial para formação digital.' },
+        { value: '+10', title: 'Projetos Realizados', description: 'Desde oficinas até plataformas digitais, promovemos soluções reais para desafios sociais.' },
+        { value: '+50', title: 'Voluntários Envolvidos', description: 'Alunos, professores e parceiros colaboram ativamente para levar conhecimento.' }
       ]
     }
   }

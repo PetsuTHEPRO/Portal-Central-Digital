@@ -18,10 +18,10 @@
         </div>
       </div>
 
-      <div v-else-if="error" class="text-center">
+      <div v-else-if="projectStore.error" class="text-center">
         <div class="error-message">
           <i class="bi bi-exclamation-triangle"></i>
-          <p class="mt-3 text-danger">{{ error }}</p>
+          <p class="mt-3 text-danger">{{ projectStore.error }}</p>
         </div>
       </div>
 
@@ -45,14 +45,19 @@
               <div class="card-body">
                 <h5 class="card-title">{{ project.title }}</h5>
                 <p class="card-text">
-                  {{ project.content }}
+                  {{ project.resumo || project.content }}
                 </p>
-                <button
-                  class="btn btn-primary mt-auto"
-                  @click="showProjectDetails(project)"
+                <!-- Teste com div clicável -->
+                <div
+                  class="btn btn-primary mt-auto clickable-btn"
+                  @click.stop="showProjectDetails(project)"
+                  role="button"
+                  tabindex="0"
+                  @keydown.enter="showProjectDetails(project)"
+                  @keydown.space="showProjectDetails(project)"
                 >
                   Ver Detalhes <i class="bi bi-arrow-right"></i>
-                </button>
+                </div>
               </div>
             </div>
           </div>
@@ -107,7 +112,7 @@
         </div>
       </div>
 
-      <ProjectModal :project="selectedProject" @close="closeModal" />
+      <ProjectModal ref="projectModal" :project="selectedProject" @close="closeModal" />
     </div>
   </section>
 </template>
@@ -149,7 +154,16 @@ export default {
   methods: {
     // Seus métodos continuam iguais
     showProjectDetails(project) {
+      console.log('Button clicked! Project:', project.title); // Debug temporário
       this.selectedProject = project;
+      // Aguarda o próximo tick para garantir que o projeto foi atualizado
+      this.$nextTick(() => {
+        if (this.$refs.projectModal) {
+          this.$refs.projectModal.openModal();
+        } else {
+          console.error('Modal ref not found');
+        }
+      });
     },
     closeModal() {
       this.selectedProject = null;
@@ -287,6 +301,8 @@ export default {
     );
     opacity: 0;
     transition: opacity 0.3s ease;
+    pointer-events: none; // Importante para não bloquear cliques
+    z-index: 0;
   }
 
   &:hover {
@@ -341,6 +357,8 @@ export default {
   display: flex;
   flex-direction: column;
   height: calc(100% - 200px);
+  position: relative;
+  z-index: 2;
 }
 
 .card-title {
@@ -367,11 +385,24 @@ export default {
   border-radius: 0.5rem;
   transition: all 0.3s ease;
   margin-top: auto;
+  position: relative;
+  z-index: 3;
+  cursor: pointer;
+  user-select: none;
   
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(6, 68, 216, 0.4);
     background: linear-gradient(135deg, color.adjust(#0644D8, $lightness: -10%), color.adjust(#ac00ff, $lightness: -10%));
+  }
+  
+  &:focus {
+    outline: 2px solid rgba(172, 0, 255, 0.5);
+    outline-offset: 2px;
+  }
+  
+  &:active {
+    transform: translateY(0);
   }
   
   i {
@@ -382,6 +413,15 @@ export default {
   &:hover i {
     transform: translateX(3px);
   }
+}
+
+.clickable-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 44px; // Área mínima para toque
+  pointer-events: auto !important;
 }
 
 // Pagination styles

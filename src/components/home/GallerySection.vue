@@ -10,10 +10,73 @@
         </div>
       </div>
 
-      <div class="grid-gallery">
-        <div v-for="i in 9" :key="i" class="gallery-item">
+      <!-- Estado de loading -->
+      <div v-if="loading" class="text-center">
+        <div class="loading-spinner">
+          <i class="bi bi-arrow-clockwise spin"></i>
+          <p class="mt-3">Carregando galeria...</p>
+        </div>
+      </div>
+
+      <!-- Estado de erro -->
+      <div v-else-if="error" class="text-center">
+        <div class="error-message">
+          <i class="bi bi-exclamation-triangle"></i>
+          <p class="mt-3 text-muted">{{ error }}</p>
+        </div>
+      </div>
+
+      <!-- Grid da galeria -->
+      <div v-else class="grid-gallery">
+        <div 
+          v-for="(item, index) in limitedGalleryItems" 
+          :key="item.id || index" 
+          class="gallery-item"
+          @click="openImageModal(item)"
+        >
+          <div class="image-content">
+            <img 
+              v-if="item.image?.url" 
+              :src="item.image.url" 
+              :alt="item.alt || item.title"
+              class="gallery-image"
+              @load="onImageLoad"
+              @error="onImageError"
+            />
+            <div v-else class="image-placeholder">
+              <i class="bi bi-image"></i>
+            </div>
+            <div class="image-overlay">
+              <div class="overlay-content">
+                <i class="bi bi-eye"></i>
+                <span>{{ item.title || 'Visualizar' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Placeholders para completar o grid se não houver imagens suficientes -->
+        <div 
+          v-for="i in Math.max(0, 9 - limitedGalleryItems.length)" 
+          :key="'placeholder-' + i" 
+          class="gallery-item"
+        >
           <div class="image-placeholder">
             <i class="bi bi-image"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal de visualização de imagem -->
+      <div v-if="selectedImage" class="image-modal" @click="closeImageModal">
+        <div class="modal-content" @click.stop>
+          <button class="modal-close" @click="closeImageModal">
+            <i class="bi bi-x-lg"></i>
+          </button>
+          <img :src="selectedImage.image?.full || selectedImage.image?.large || selectedImage.image?.url" :alt="selectedImage.title" />
+          <div class="modal-info">
+            <h5>{{ selectedImage.title }}</h5>
+            <p v-if="selectedImage.date">{{ formatDate(selectedImage.date) }}</p>
           </div>
         </div>
       </div>
@@ -22,8 +85,91 @@
 </template>
 
 <script>
+import apiService from '@/services/api';
+
 export default {
   name: "GallerySection",
+  data() {
+    return {
+      galleryItems: [],
+      loading: true,
+      error: null,
+      selectedImage: null,
+    };
+  },
+  computed: {
+    limitedGalleryItems() {
+      // Retorna apenas os primeiros 9 itens
+      return this.galleryItems.slice(0, 9);
+    }
+  },
+  async created() {
+    await this.loadGalleryItems();
+  },
+  methods: {
+    async loadGalleryItems() {
+      this.loading = true;
+      this.error = null;
+
+      try {
+        const response = await apiService.get("/galeria?_embed");
+        const galleries = response || [];
+
+        this.galleryItems = galleries.flatMap((gallery) => {
+          if (!gallery.gallery_data || !Array.isArray(gallery.gallery_data)) {
+            return [];
+          }
+
+          return gallery.gallery_data.map((image) => ({
+            id: image.id,
+            title: gallery.title.rendered,
+            date: gallery.date,
+            image: {
+              url: image.url_full || image.url_large || image.url_medium, // Prioriza a melhor qualidade
+              large: image.url_large,
+              full: image.url_full,
+            },
+            alt: image.alt,
+            caption: image.caption,
+          }));
+        });
+
+      } catch (error) {
+        this.error = "Erro ao carregar a galeria";
+        console.error("Gallery loading error:", error);
+      } finally {
+        this.loading = false;
+      }
+    },
+    openImageModal(item) {
+      this.selectedImage = item;
+      document.body.style.overflow = 'hidden';
+    },
+    closeImageModal() {
+      this.selectedImage = null;
+      document.body.style.overflow = '';
+    },
+    formatDate(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      return date.toLocaleDateString('pt-BR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    },
+    onImageLoad() {
+      // Callback quando a imagem carrega
+    },
+    onImageError(event) {
+      // Callback quando há erro no carregamento
+      console.error('Erro ao carregar imagem:', event);
+    }
+  },
+  beforeUnmount() {
+    // Limpa o overflow quando o componente é destruído
+    document.body.style.overflow = '';
+  }
 };
 </script>
 
@@ -144,6 +290,74 @@ export default {
   }
 }
 
+.gallery-item {
+  cursor: pointer;
+  
+  .image-content {
+    width: 100%;
+    height: 100%;
+    border-radius: 1rem;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      transform: translateY(-5px);
+      box-shadow: 
+        0 15px 30px rgba(0, 0, 0, 0.2),
+        0 0 20px rgba(120, 100, 255, 0.2);
+      
+      .image-overlay {
+        opacity: 1;
+      }
+      
+      .gallery-image {
+        transform: scale(1.05);
+      }
+    }
+  }
+}
+
+.gallery-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  
+  .overlay-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    color: white;
+    text-align: center;
+    
+    i {
+      font-size: 1.5rem;
+    }
+    
+    span {
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+  }
+}
+
 .gallery-item .image-placeholder {
   width: 100%;
   height: 100%;
@@ -196,6 +410,117 @@ export default {
       transform: scale(1.1);
     }
   }
+}
+
+// Estados de loading e erro
+.loading-spinner, .error-message {
+  color: rgba(255, 255, 255, 0.8);
+  padding: 3rem 0;
+  
+  i {
+    font-size: 2.5rem;
+    background: linear-gradient(135deg, #7864ff, #3cb4ff);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  p {
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 1rem;
+  }
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+// Modal de visualização de imagem
+.image-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(8px);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  max-width: 90vw;
+  max-height: 90vh;
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 1rem;
+  overflow: hidden;
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  
+  img {
+    width: 100%;
+    height: auto;
+    max-height: 70vh;
+    object-fit: contain;
+    display: block;
+  }
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(0, 0, 0, 0.7);
+  border: none;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(8px);
+  z-index: 10;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1);
+  }
+}
+
+.modal-info {
+  padding: 1.5rem;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(16px);
+  
+  h5 {
+    color: #fff;
+    margin: 0 0 0.5rem 0;
+    font-size: 1.1rem;
+  }
+  
+  p {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+    font-size: 0.9rem;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 /* --- Posicionamento Explícito dos Itens no Grid --- */

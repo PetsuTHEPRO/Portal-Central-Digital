@@ -19,8 +19,9 @@
               <img src="@/assets/logoNoPadding.svg" alt="Portal Central Digital" />
             </div>
             <p class="hero-description">
-              Transformamos conceitos em realidade digital através de projetos inovadores, 
-              conectando tecnologia, criatividade e impacto social em cada solução que desenvolvemos.
+              O Programa Ponte Digital conecta o IFMA à comunidade, promovendo inclusão digital e 
+              capacitação tecnológica. Através de projetos inovadores, buscamos transformar vidas ao 
+              integrar o conhecimento acadêmico com as demandas reais da sociedade.
             </p>
             <div class="hero-actions">
               <router-link to="/projetos" class="btn btn-primary hero-btn-primary">

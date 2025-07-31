@@ -9,12 +9,21 @@
 <script>
 import AppNavbar from './components/AppNavbar.vue';
 import AppFooter from './components/AppFooter.vue';
+import AOS from 'aos';
+import 'aos/dist/aos.css';
 
 export default {
   name: 'App',
   components: {
     AppNavbar,
     AppFooter
+  },
+  mounted() {
+    AOS.init({
+      duration: 1000,
+      once: true,
+      offset: 100
+    });
   }
 }
 </script>
