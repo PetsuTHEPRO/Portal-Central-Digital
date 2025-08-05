@@ -8,47 +8,32 @@
         </p>
       </header>
 
-      <!-- Loading state -->
-      <div v-if="loading" class="text-center">
-        <div class="loading-spinner">
-          <i class="bi bi-arrow-clockwise spin"></i>
-          <p class="mt-3">Carregando postagens...</p>
-        </div>
+      <div v-if="loading" class="text-center loading-state">
+        <div class="loading-spinner"><i class="bi bi-arrow-clockwise spin"></i></div>
+        <p class="mt-3">Carregando postagens...</p>
       </div>
 
-      <!-- Error state -->
-      <div v-else-if="error" class="text-center">
-        <div class="error-message">
-          <i class="bi bi-exclamation-triangle"></i>
-          <p class="mt-3 text-danger">{{ error }}</p>
-        </div>
+      <div v-else-if="error" class="text-center error-message">
+        <i class="bi bi-exclamation-triangle"></i>
+        <p class="mt-3 text-danger">{{ error }}</p>
       </div>
 
-      <!-- Posts list -->
-      <div v-else-if="paginatedPosts.length > 0" class="posts-list">
-        <article
-          v-for="post in paginatedPosts"
-          :key="post.id"
-          class="post-item"
-        >
+      <div v-else-if="postsList.length > 0" class="posts-list">
+        <article v-for="post in postsList" :key="post.idDocumento" class="post-item">
           <div class="post-card">
             <div class="post-header">
-              <div class="post-category" v-if="post.category">
-                {{ post.category }}
-              </div>
+              <div class="post-category" v-if="post.category">{{ post.category }}</div>
               <h2 class="post-title">
-                <router-link :to="'/posts/' + post.id">{{
-                  post.title
-                }}</router-link>
+                <router-link :to="'/posts/' + post.idDocumento">{{ post.title }}</router-link>
               </h2>
               <div class="post-meta">
                 <div class="meta-item">
                   <i class="bi bi-person"></i>
-                  <span>{{ post.author || "Autor não informado" }}</span>
+                  <span>{{ post.author }}</span>
                 </div>
                 <div class="meta-item">
                   <i class="bi bi-calendar3"></i>
-                  <span>{{ formatDate(post.publishedAt || post.date) }}</span>
+                  <span>{{ formatDate(post.date) }}</span>
                 </div>
                 <div class="meta-item" v-if="post.readTime">
                   <i class="bi bi-clock"></i>
@@ -58,24 +43,12 @@
             </div>
 
             <div class="post-content">
-              <p class="post-description">
-                {{
-                  post.summary || post.description || "Sem descrição disponível"
-                }}
-              </p>
+              <p class="post-description">{{ post.summary }}</p>
 
               <div class="post-actions">
-                <router-link :to="'/posts/' + post.id" class="btn btn-primary">
-                  Ler mais <i class="bi bi-arrow-right"></i>
-                </router-link>
+                <router-link :to="'/posts/' + post.idDocumento" class="btn btn-primary">Ler mais <i class="bi bi-arrow-right"></i></router-link>
                 <div class="post-tags" v-if="post.tags && post.tags.length > 0">
-                  <span
-                    v-for="tag in post.tags.slice(0, 3)"
-                    :key="tag"
-                    class="tag"
-                  >
-                    {{ tag }}
-                  </span>
+                  <span v-for="tag in post.tags.slice(0, 3)" :key="tag" class="tag">{{ tag }}</span>
                 </div>
               </div>
             </div>
@@ -83,222 +56,57 @@
         </article>
       </div>
 
-      <!-- Empty state -->
-      <div v-else class="text-center">
-        <div class="empty-state">
-          <i class="bi bi-journal-text"></i>
-          <h5 class="mt-3">Nenhuma postagem encontrada</h5>
-          <p>Não há postagens disponíveis no momento.</p>
-        </div>
+      <div v-else class="text-center empty-state">
+        <i class="bi bi-journal-text"></i>
+        <h5 class="mt-3">Nenhuma postagem encontrada</h5>
       </div>
 
-      <!-- Pagination -->
-      <nav
-        v-if="totalPages > 1"
-        aria-label="Navegação de Posts"
-        class="pagination-nav"
-      >
+      <nav v-if="pagination && pagination.pageCount > 1" aria-label="Navegação de Posts" class="pagination-nav">
         <div class="pagination-container">
-          <button
-            class="pagination-btn"
-            :class="{ disabled: currentPage === 1 }"
-            @click="prevPage"
-            :disabled="currentPage === 1"
-          >
-            <i class="bi bi-chevron-left"></i>
-            Anterior
-          </button>
-
+          <button class="pagination-btn" :disabled="pagination.page === 1" @click="changePage(pagination.page - 1)">Anterior</button>
           <div class="page-numbers">
-            <button
-              v-for="page in totalPages"
-              :key="page"
-              class="page-btn"
-              :class="{ active: page === currentPage }"
-              @click="goToPage(page)"
-            >
-              {{ page }}
-            </button>
+            <button v-for="page in pagination.pageCount" :key="page" class="page-btn" :class="{ active: page === pagination.page }" @click="changePage(page)">{{ page }}</button>
           </div>
-
-          <button
-            class="pagination-btn"
-            :class="{ disabled: currentPage === totalPages }"
-            @click="nextPage"
-            :disabled="currentPage === totalPages"
-          >
-            Próximo
-            <i class="bi bi-chevron-right"></i>
-          </button>
+          <button class="pagination-btn" :disabled="pagination.page === pagination.pageCount" @click="changePage(pagination.page + 1)">Próximo</button>
         </div>
       </nav>
     </div>
   </main>
 </template>
 
-<script>
-import apiService from "@/services/api";
+<script setup>
+import { onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { usePostStore } from '@/stores/postStore';
 
-export default {
-  name: "BlogView",
-  data() {
-    return {
-      currentPage: 1,
-      itemsPerPage: 5,
-      allPosts: [],
-      loading: false,
-      error: null,
-    };
-  },
-  computed: {
-    totalPages() {
-      return Math.ceil(this.allPosts.length / this.itemsPerPage);
-    },
-    paginatedPosts() {
-      const start = (this.currentPage - 1) * this.itemsPerPage;
-      const end = start + this.itemsPerPage;
-      return this.allPosts.slice(start, end);
-    },
-  },
-  async mounted() {
-    await this.fetchPosts();
-  },
-  methods: {
-    async fetchPosts() {
-      this.loading = true;
-      this.error = null;
+// 1. Conecta o componente com a store Pinia que já criamos
+const postStore = usePostStore();
 
-      try {
-        const url =
-          "https://opulent-journey.localsite.io/wp-json/wp/v2/postagem";
-        const config = {
-          auth: {
-            username: "terrace",
-            password: "earsplitting",
-          },
-        };
-        const response = await apiService.get(url, config);
-        console.log(response)
-        // Mapeamos e guardamos os dados no 'state'
-        this.posts = response.map((post) => ({
-          id: post.id,
-          title: post.acf.titulo_da_postagem || postData.title.rendered,
-          author: post.acf.informacoes_do_autor?.nome_do_autor ??
-              "Autor Desconhecido",
-          date: "2025-08-18",
-          summary: post.acf.descricao_curta || "",
-          category: post.acf.categoria,
-          readTime: post.acf.tempo_leitura,
-        }));
-        this.allPosts = this.posts
-        console.log("!", this.posts)
-      } catch (err) {
-        this.error = "Não foi possível carregar os projetos.";
-        console.error("Erro ao buscar projetos:", err);
-      } finally {
-        this.loading = false;
-      }
-    },
-    async loadPosts() {
-      this.loading = true;
-      this.error = null;
+// 2. Pega o state e as actions que precisamos da store
+// 'storeToRefs' garante que o state continue reativo
+const { postsList, pagination, loading, error } = storeToRefs(postStore);
+const { fetchAllPosts } = postStore;
 
-      try {
-        // Fetch posts from CMS
-        const response = await apiService.get("/postagem");
-        console.log(response);
-        this.allPosts = response.data || [];
-      } catch (error) {
-        this.error =
-          "Erro ao carregar as postagens. Tente novamente mais tarde.";
-        console.error("Posts loading error:", error);
-
-        // Fallback to mock data in case of error
-        this.allPosts = [
-          {
-            id: "oficinas-no-sabado",
-            title: "Ponte Digital Irá Fazer Oficinas no Sábado!",
-            author: "Jeane",
-            date: "2025-08-18",
-            summary:
-              "Venha participar de nossas oficinas práticas de tecnologia e inovação. Uma oportunidade única para aprender e colaborar.",
-            category: "Eventos",
-            readTime: 3,
-            tags: ["Oficinas", "Tecnologia", "Comunidade"],
-          },
-          {
-            id: "novo-projeto-ia",
-            title: "Lançamento do Novo Projeto de Inteligência Artificial",
-            author: "Carlos",
-            date: "2025-08-15",
-            summary:
-              "Apresentamos nosso mais novo projeto focado em soluções de IA para a comunidade local, visando otimizar processos e gerar impacto social.",
-            category: "Projetos",
-            readTime: 5,
-            tags: ["IA", "Inovação", "Projetos"],
-          },
-          {
-            id: "parceria-com-universidade",
-            title: "Firmamos Parceria com a Universidade Federal",
-            author: "Admin",
-            date: "2025-08-10",
-            summary:
-              "Uma nova aliança estratégica que irá expandir nossas pesquisas e o alcance de nossos programas educacionais.",
-            category: "Parcerias",
-            readTime: 4,
-            tags: ["Parceria", "Educação", "Universidade"],
-          },
-          {
-            id: "inscricoes-abertas-2025",
-            title: "Inscrições Abertas para o Programa 2025.2",
-            author: "Ana",
-            date: "2025-08-05",
-            summary:
-              "Não perca a chance de fazer parte da nossa próxima turma. As vagas são limitadas, garanta já a sua!",
-            category: "Inscrições",
-            readTime: 2,
-            tags: ["Inscrições", "Programa", "Vagas"],
-          },
-          {
-            id: "resumo-evento-julho",
-            title: "Resumo do Nosso Último Evento de Julho",
-            author: "Pedro",
-            date: "2025-08-01",
-            summary:
-              "Confira os melhores momentos, palestras e resultados do nosso encontro mensal que reuniu mais de 100 pessoas.",
-            category: "Eventos",
-            readTime: 6,
-            tags: ["Evento", "Resumo", "Comunidade"],
-          },
-        ];
-      } finally {
-        this.loading = false;
-      }
-    },
-    formatDate(dateString) {
-      if (!dateString) return "Data não disponível";
-
-      const options = { year: "numeric", month: "long", day: "numeric" };
-      return new Date(dateString).toLocaleDateString("pt-BR", options);
-    },
-    goToPage(pageNumber) {
-      this.currentPage = pageNumber;
-      window.scrollTo({ top: 0, behavior: "smooth" });
-    },
-    nextPage() {
-      if (this.currentPage < this.totalPages) {
-        this.currentPage++;
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-    },
-    prevPage() {
-      if (this.currentPage > 1) {
-        this.currentPage--;
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
-    },
-  },
+// 3. Função para formatar a data (pode ser movida para um arquivo de 'utils' no futuro)
+const formatDate = (dateString) => {
+  if (!dateString) return "Data não disponível";
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  return new Date(dateString).toLocaleDateString("pt-BR", options);
 };
+
+// 4. Função para mudar de página que agora chama a action da store
+const changePage = (page) => {
+  // Validação para não ir para páginas que não existem
+  if (page < 1 || page > pagination.value.pageCount) return;
+  
+  window.scrollTo({ top: 0, behavior: "smooth" }); // Rola para o topo
+  fetchAllPosts(page); // Pede à store para buscar os dados da nova página
+};
+
+// 5. Quando o componente é montado na tela, busca a primeira página de posts
+onMounted(() => {
+  fetchAllPosts(1);
+});
 </script>
 
 <style scoped lang="scss">

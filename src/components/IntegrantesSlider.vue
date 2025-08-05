@@ -1,222 +1,105 @@
 <template>
-  <div v-if="loading" class="text-center" role="status" aria-live="polite">
-    <div class="loading-spinner mb-2" aria-hidden="true"></div>
-    <p class="text-muted">Carregando integrantes...</p>
-    <span class="sr-only">Carregando lista de integrantes do projeto, aguarde...</span>
-  </div>
-  <div v-else-if="filteredMembers.length > 0" class="swiper-container">
-    <div 
-      class="swiper" 
-      ref="swiper"
-      role="region"
-      aria-label="Lista de integrantes do projeto"
-      aria-describedby="members-instructions"
-    >
+  <div v-if="members && members.length > 0" class="swiper-container">
+    <div class="swiper" ref="swiperEl">
       <div class="swiper-wrapper">
         <div
-          v-for="(member, index) in filteredMembers"
+          v-for="(member, index) in members"
           :key="member.id"
           class="swiper-slide"
           role="group"
-          :aria-label="`Integrante ${index + 1} de ${filteredMembers.length}`"
+          :aria-label="`Integrante ${index + 1} de ${members.length}`"
         >
-          <div 
-            class="integrante-card"
-            tabindex="0"
-            :aria-labelledby="`member-name-${member.id}`"
-            :aria-describedby="`member-role-${member.id}`"
-            @keydown.enter="announceMember(member)"
-            @keydown.space.prevent="announceMember(member)"
-          >
+          <div class="integrante-card" tabindex="0">
             <img
-              v-if="member.fotoUrl"
-              :src="member.fotoUrl"
-              :alt="`Foto de ${member.nome}`"
+              v-if="member.avatarUrl"
+              :src="member.avatarUrl"
+              :alt="`Foto de ${member.name}`"
               class="integrante-foto"
-              role="img"
             />
-            <div 
-              v-else 
-              class="integrante-placeholder"
-              role="img"
-              :aria-label="`Foto não disponível para ${member.nome}`"
-            >
+            <div v-else class="integrante-placeholder">
               <i class="bi bi-person" aria-hidden="true"></i>
             </div>
             <div class="integrante-info">
-              <div 
-                :id="`member-name-${member.id}`"
-                class="integrante-nome"
-                role="heading"
-                aria-level="4"
-              >
-                {{ member.nome }}
-              </div>
-              <div 
-                :id="`member-role-${member.id}`"
-                class="integrante-cargo"
-              >
-                {{ member.cargo }}
-              </div>
+              <div class="integrante-nome">{{ member.nome }}</div>
+              <div class="integrante-cargo">{{ member.cargo }}</div>
             </div>
           </div>
         </div>
       </div>
-      <div 
-        class="swiper-button-next d-none"
-        role="button"
-        aria-label="Próximo integrante"
-        tabindex="0"
-        @keydown.enter="$event.target.click()"
-        @keydown.space.prevent="$event.target.click()"
-      ></div>
-      <div 
-        class="swiper-button-prev d-none"
-        role="button"
-        aria-label="Integrante anterior"
-        tabindex="0"
-        @keydown.enter="$event.target.click()"
-        @keydown.space.prevent="$event.target.click()"
-      ></div>
-    </div>
-    <div id="members-instructions" class="sr-only">
-      Use as setas do teclado ou Tab para navegar entre os integrantes. Pressione Enter ou Espaço para mais informações sobre um integrante.
+      <div class="swiper-button-next d-none"></div>
+      <div class="swiper-button-prev d-none"></div>
     </div>
   </div>
+  
   <div v-else class="text-center">
-    <div class="empty-state-small" role="status" aria-live="polite">
+    <div class="empty-state-small">
       <i class="bi bi-people" aria-hidden="true"></i>
-      <p>{{ memberIds.length > 0 ? 'Integrantes não encontrados.' : 'Nenhum integrante selecionado.' }}</p>
+      <p>Nenhum integrante associado a este projeto.</p>
     </div>
   </div>
 </template>
 
-<script>
-import axios from "axios";
+<script setup>
+import { ref, onMounted, onUnmounted, watch } from 'vue';
 import Swiper from "swiper";
 import { Navigation } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 
-export default {
-  name: "IntegrantesSlider",
-  props: {
-    memberIds: {
-      type: Array,
-      required: true,
-      default: () => [],
-    },
+// 1. O componente agora recebe uma 'prop' chamada 'members'
+const props = defineProps({
+  members: {
+    type: Array,
+    required: true,
+    default: () => [], // O padrão é uma lista vazia
   },
-  data() {
-    return {
-      allMembers: [],
-      loading: true,
-      swiperInstance: null,
-    };
-  },
-  computed: {
-    filteredMembers() {
-      if (!this.allMembers.length || !this.memberIds.length) {
-        return [];
-      }
-      
-      // Debug para verificar os dados
-      console.log('All members:', this.allMembers);
-      console.log('Member IDs to filter:', this.memberIds);
-      
-      // Converter ambos para string para comparação
-      const filtered = this.allMembers.filter((member) => {
-        const memberId = String(member.id);
-        const hasMatch = this.memberIds.some(id => String(id) === memberId);
-        return hasMatch;
-      });
-      
-      console.log('Filtered members:', filtered);
-      return filtered;
-    },
-  }, // 👇 O BLOCO 'WATCH' FOI REMOVIDO DAQUI 👇
-  methods: {
-    // Este método agora é "público" e será chamado pelo componente pai
-    initSwiper() {
-      if (this.swiperInstance) {
-        this.swiperInstance.destroy(true, true);
-        this.swiperInstance = null;
-      }
+});
 
-      this.$nextTick(() => {
-        if (this.filteredMembers.length > 0) {
-          this.swiperInstance = new Swiper(this.$refs.swiper, {
-            modules: [Navigation],
-            observer: true,
-            observeParents: true,
-            slidesPerView: 1,
-            spaceBetween: 20,
-            navigation: {
-              nextEl: ".swiper-button-next",
-              prevEl: ".swiper-button-prev",
-            },
-            breakpoints: {
-              768: { slidesPerView: 2 },
-              992: { slidesPerView: 3 },
-            },
-            // Configurações de acessibilidade
-            a11y: {
-              enabled: true,
-              prevSlideMessage: 'Slide anterior',
-              nextSlideMessage: 'Próximo slide',
-              firstSlideMessage: 'Este é o primeiro slide',
-              lastSlideMessage: 'Este é o último slide',
-            },
-            keyboard: {
-              enabled: true,
-              onlyInViewport: true,
-            },
-          });
-        }
-      });
-    },
-    announceMember(member) {
-      const announcement = `${member.nome}, ${member.cargo}`;
-      this.announceToScreenReader(announcement);
-    },
-    announceToScreenReader(message) {
-      // Criar um elemento temporário para anúncios
-      const announcement = document.createElement('div');
-      announcement.setAttribute('aria-live', 'polite');
-      announcement.setAttribute('aria-atomic', 'true');
-      announcement.className = 'sr-only';
-      announcement.textContent = message;
-      
-      document.body.appendChild(announcement);
-      
-      // Remover após um tempo
-      setTimeout(() => {
-        document.body.removeChild(announcement);
-      }, 1000);
-    }
-  },
-  created() {
-    const url = "https://opulent-journey.localsite.io/wp-json/wp/v2/membro";
-    const config = { auth: { username: "terrace", password: "earsplitting" } };
+// 2. Variáveis para o Swiper
+const swiperEl = ref(null);
+let swiperInstance = null;
 
-    axios
-      .get(url, config)
-      .then((response) => {
-        this.allMembers = response.data.map((membro) => ({
-          id: membro.id,
-          nome: membro.acf.nome,
-          cargo: membro.acf.cargo_membro,
-          fotoUrl: membro.acf.imagem_integrante
-            ? membro.acf.imagem_integrante.url
-            : false,
-        }));
-      })
-      .catch((error) =>
-        console.error("Erro ao buscar todos os membros:", error)
-      )
-      .finally(() => (this.loading = false));
-  },
+// 3. Função para inicializar o Swiper
+const initSwiper = () => {
+  if (swiperInstance) {
+    swiperInstance.destroy(true, true);
+  }
+  
+  if (swiperEl.value && props.members.length > 0) {
+    swiperInstance = new Swiper(swiperEl.value, {
+      modules: [Navigation],
+      observer: true,
+      observeParents: true,
+      slidesPerView: 1,
+      spaceBetween: 20,
+      navigation: {
+        nextEl: ".swiper-button-next",
+        prevEl: ".swiper-button-prev",
+      },
+      breakpoints: {
+        768: { slidesPerView: 2 },
+        992: { slidesPerView: 3 },
+      },
+    });
+  }
 };
+
+// 4. Inicializa o Swiper quando o componente é montado
+onMounted(() => {
+  initSwiper();
+});
+
+// 5. Destrói a instância do Swiper para evitar vazamentos de memória
+onUnmounted(() => {
+  if (swiperInstance) {
+    swiperInstance.destroy(true, true);
+  }
+});
+
+// 6. (Opcional, mas recomendado) Se os dados dos membros mudarem, reinicializa o Swiper
+watch(() => props.members, () => {
+  initSwiper();
+});
 </script>
 
 <style scoped lang="scss">

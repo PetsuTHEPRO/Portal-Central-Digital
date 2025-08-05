@@ -45,7 +45,7 @@
               <div class="post-meta">
                 <div class="author-info">
                   <div class="author-avatar">
-                    <AutenticatedImage
+                    <img
                       v-if="featuredPost.author.avatarUrl"
                       :src="featuredPost.author.avatarUrl"
                       alt="Avatar"
@@ -68,7 +68,7 @@
               <div class="post-actions">
                 <router-link
                   class="btn btn-primary post-btn-primary"
-                  :to="'/posts/' + featuredPost.id"
+                  :to="'/posts/' + featuredPost.idDocumento"
                 >
                   <span>Ler Post</span>
                   <i class="bi bi-arrow-right"></i>
@@ -83,7 +83,7 @@
             <div class="visual-container">
               <router-link to="/posts/ponte-digital-oficinas-sabado" class="main-post-card clickable-card">
                 <div class="card-image">
-                  <AutenticatedImage
+                  <img
                     v-if="featuredPost.featuredImageUrl"
                     :src="featuredPost.featuredImageUrl"
                     :alt="featuredPost.title"
@@ -122,115 +122,30 @@
   </section>
 </template>
 
-<script>
-import apiService from "@/services/api";
-import AutenticatedImage from "@/components/AuthenticatedImage.vue";
+<script setup>
+import { onMounted } from 'vue';
+import { storeToRefs } from 'pinia';
+import { usePostStore } from '@/stores/postStore'; // 1. Importa a store
 
-export default {
-  name: "PostsSection",
-  components: {
-    AutenticatedImage,
-  },
-  data() {
-    return {
-      // 1. O estado agora é um único objeto para o post, mais 'loading' e 'error'
-      featuredPost: null,
-      loading: true,
-      error: null,
-    };
-  },
-  async created() {
-    // A lógica de busca está agora em um método dedicado para organização
-    await this.loadFeaturedPost();
-    console.log(this.featuredPost);
-  },
-  methods: {
-    /**
-     * Busca os dados usando a sua lógica original de 2 passos e os formata.
-     */
-    async loadFeaturedPost() {
-      this.loading = true;
-      this.error = null;
-      try {
-        // --- SUA LÓGICA ORIGINAL (MANTIDA) ---
-        const homeResponse = await apiService.get("/home");
+// 2. Instancia a store
+const postStore = usePostStore();
 
-        // Verificação para garantir que homeResponse e homeResponse[0] existem
-        if (!homeResponse || !homeResponse[0]) {
-          throw new Error(
-            "A resposta da API '/home' está vazia ou em formato inesperado."
-          );
-        }
-        const homeData = homeResponse[0];
+// 3. Pega o state e actions da store
+// 'storeToRefs' garante que as propriedades do state mantenham a reatividade
+const { featuredPost, loading, error } = storeToRefs(postStore);
+const { fetchFeaturedPost } = postStore; // Pega a action
 
-        const postIds = homeData.acf.postagem_destaque;
-
-        if (!postIds || postIds.length === 0) {
-          this.loading = false;
-          return;
-        }
-
-        const postsResponse = await apiService.get("/postagem", {
-          params: {
-            // A sua lógica de buscar pelo ID está correta e foi mantida
-            include: postIds.join(","),
-            _embed: true, // Adicionado para buscar dados de autor/tags, se necessário
-          },
-        });
-
-        if (!postsResponse || postsResponse.length === 0) {
-          throw new Error(
-            "O post em destaque com o ID fornecido não foi encontrado."
-          );
-        }
-
-        // --- AQUI ESTÁ A MUDANÇA PRINCIPAL ---
-        // 2. Pegamos APENAS o primeiro post da lista que a API retornou.
-        const postData = postsResponse[0];
-
-        // 3. Mapeamos esse ÚNICO post para o nosso objeto 'featuredPost'.
-        this.featuredPost = {
-          id: postData.id,
-          title: postData.acf.titulo_da_postagem || postData.title.rendered,
-          excerpt: postData.acf.descricao_curta || "", // Usando excerpt do ACF
-          date: postData.date, // A data agora é dinâmica
-
-          // Usando optional chaining (?.) para mais segurança
-          featuredImageUrl: postData.acf.imagem_de_destaque?.url ?? null,
-
-          author: {
-            name:
-              postData.acf.informacoes_do_autor?.nome_do_autor ??
-              "Autor Desconhecido",
-            role: postData.acf.informacoes_do_autor?.cargo_do_autor ?? "",
-            avatarUrl:
-              postData.acf.informacoes_do_autor?.foto_do_autor?.url ?? null,
-          },
-
-          // Adicionando as tags para os mini-cards flutuantes
-          tags: postData.acf.tags || postData._embedded?.['wp:term']?.[1] || ['Tecnologia', 'Inovação', 'Digital'],
-        };
-        
-        // Debug: verificar se as tags estão sendo carregadas
-        console.log('Tags carregadas:', this.featuredPost.tags);
-      } catch (err) {
-        this.error = "Não foi possível carregar o post em destaque.";
-        console.error("Erro ao buscar post:", err);
-      } finally {
-        this.loading = false;
-      }
-    },
-
-    /**
-     * Função auxiliar para formatar a data.
-     */
-    formatDate(dateString) {
-      if (!dateString) return "";
-      const options = { month: "short", day: "numeric", year: "numeric" };
-      return new Date(dateString).toLocaleDateString("pt-BR", options);
-    },
-  },
+// 4. Função auxiliar para formatar a data
+const formatDate = (dateString) => {
+  if (!dateString) return "";
+  const options = { year: 'numeric', month: 'long', day: 'numeric' };
+  return new Date(dateString).toLocaleDateString("pt-BR", options);
 };
+
+// 5. Quando o componente for montado, busca os dados
+onMounted(() => {
+  fetchFeaturedPost();
+});
 </script>
 
 <style scoped lang="scss">

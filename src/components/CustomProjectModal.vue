@@ -22,10 +22,10 @@
       
       <div class="modal-body" v-if="project">
         <div v-if="project.imagemDestaqueUrl" class="modal-image">
-          <img 
+          <AuthenticatedImage 
             :src="project.imagemDestaqueUrl" 
             :alt="project.title"
-            class="img-fluid"
+            class="img-fluid image"
           />
         </div>
         
@@ -53,12 +53,12 @@
           <div v-if="project.galeria && project.galeria.length > 0" class="mt-4">
             <h6>Galeria</h6>
             <div class="gallery-grid">
-              <img 
+              <AuthenticatedImage 
                 v-for="image in project.galeria" 
                 :key="image.id" 
                 :src="image.url" 
                 :alt="image.alt"
-                class="gallery-image"
+                class="gallery-image image"
               />
             </div>
           </div>
@@ -186,7 +186,7 @@ export default {
   height: 250px;
   overflow: hidden;
   
-  img {
+  .image {
     width: 100%;
     height: 100%;
     object-fit: cover;

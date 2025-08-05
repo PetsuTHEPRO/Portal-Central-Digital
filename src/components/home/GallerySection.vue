@@ -4,60 +4,28 @@
       <div class="row justify-content-center text-center mb-4">
         <div class="col-lg-8">
           <h2 class="section-title">Acesse Nossos Registros</h2>
-          <router-link to="/galeria" class="btn btn-primary mt-2"
-            >Galeria</router-link
-          >
+          <router-link to="/galeria" class="btn btn-primary mt-2">Galeria</router-link>
         </div>
       </div>
 
-      <!-- Estado de loading -->
-      <div v-if="loading" class="text-center">
-        <div class="loading-spinner">
-          <i class="bi bi-arrow-clockwise spin"></i>
-          <p class="mt-3">Carregando galeria...</p>
-        </div>
-      </div>
-
-      <!-- Estado de erro -->
-      <div v-else-if="error" class="text-center">
-        <div class="error-message">
-          <i class="bi bi-exclamation-triangle"></i>
-          <p class="mt-3 text-muted">{{ error }}</p>
-        </div>
-      </div>
-
-      <!-- Grid da galeria -->
-      <div v-else class="grid-gallery">
+      <div class="grid-gallery">
         <div 
-          v-for="(item, index) in limitedGalleryItems" 
+          v-for="(item, index) in galleryItems" 
           :key="item.id || index" 
           class="gallery-item"
           @click="openImageModal(item)"
         >
           <div class="image-content">
             <img 
-              v-if="item.image?.url" 
               :src="item.image.url" 
               :alt="item.alt || item.title"
-              class="gallery-image"
-              @load="onImageLoad"
-              @error="onImageError"
+              class="gallery-image image"
             />
-            <div v-else class="image-placeholder">
-              <i class="bi bi-image"></i>
-            </div>
-            <div class="image-overlay">
-              <div class="overlay-content">
-                <i class="bi bi-eye"></i>
-                <span>{{ item.title || 'Visualizar' }}</span>
-              </div>
-            </div>
           </div>
         </div>
 
-        <!-- Placeholders para completar o grid se não houver imagens suficientes -->
         <div 
-          v-for="i in Math.max(0, 9 - limitedGalleryItems.length)" 
+          v-for="i in Math.max(0, 9 - galleryItems.length)" 
           :key="'placeholder-' + i" 
           class="gallery-item"
         >
@@ -67,109 +35,89 @@
         </div>
       </div>
 
-      <!-- Modal de visualização de imagem -->
-      <div v-if="selectedImage" class="image-modal" @click="closeImageModal">
-        <div class="modal-content" @click.stop>
-          <button class="modal-close" @click="closeImageModal">
-            <i class="bi bi-x-lg"></i>
-          </button>
-          <img :src="selectedImage.image?.full || selectedImage.image?.large || selectedImage.image?.url" :alt="selectedImage.title" />
-          <div class="modal-info">
-            <h5>{{ selectedImage.title }}</h5>
-            <p v-if="selectedImage.date">{{ formatDate(selectedImage.date) }}</p>
-          </div>
-        </div>
-      </div>
     </div>
   </section>
 </template>
 
-<script>
-import apiService from '@/services/api';
+<script setup>
+import { ref } from 'vue';
 
-export default {
-  name: "GallerySection",
-  data() {
-    return {
-      galleryItems: [],
-      loading: true,
-      error: null,
-      selectedImage: null,
-    };
+// --- AQUI ESTÁ A MUDANÇA PRINCIPAL ---
+// 1. Não precisamos mais de Pinia, onMounted, ou chamadas de API.
+//    Criamos uma lista de dados diretamente no componente.
+
+// Função para gerar os caminhos das imagens locais.
+// O Vite (ou Vue CLI) irá transformar esses caminhos em URLs funcionais.
+
+// 2. Criamos nossa lista de imagens "fixa"
+const galleryItems = ref([
+  { 
+    id: 1, 
+    title: 'Oficina de Web Design', 
+    alt: 'Alunos aprendendo sobre design responsivo',
+    image: { url: new URL(`@/assets/images/image-1.png`, import.meta.url).href }  // Assumindo que são .jpeg
   },
-  computed: {
-    limitedGalleryItems() {
-      // Retorna apenas os primeiros 9 itens
-      return this.galleryItems.slice(0, 9);
-    }
+  { 
+    id: 2, 
+    title: 'Workshop de Robótica', 
+    alt: 'Montagem de um robô seguidor de linha',
+    image: { url: new URL(`@/assets/images/image-2.png`, import.meta.url).href } 
   },
-  async created() {
-    await this.loadGalleryItems();
+  { 
+    id: 3, 
+    title: 'Palestra sobre IA', 
+    alt: 'Palestrante explicando redes neurais',
+    image: { url: new URL(`@/assets/images/image-3.png`, import.meta.url).href } 
   },
-  methods: {
-    async loadGalleryItems() {
-      this.loading = true;
-      this.error = null;
-
-      try {
-        const response = await apiService.get("/galeria?_embed");
-        const galleries = response || [];
-
-        this.galleryItems = galleries.flatMap((gallery) => {
-          if (!gallery.gallery_data || !Array.isArray(gallery.gallery_data)) {
-            return [];
-          }
-
-          return gallery.gallery_data.map((image) => ({
-            id: image.id,
-            title: gallery.title.rendered,
-            date: gallery.date,
-            image: {
-              url: image.url_full || image.url_large || image.url_medium, // Prioriza a melhor qualidade
-              large: image.url_large,
-              full: image.url_full,
-            },
-            alt: image.alt,
-            caption: image.caption,
-          }));
-        });
-
-      } catch (error) {
-        this.error = "Erro ao carregar a galeria";
-        console.error("Gallery loading error:", error);
-      } finally {
-        this.loading = false;
-      }
-    },
-    openImageModal(item) {
-      this.selectedImage = item;
-      document.body.style.overflow = 'hidden';
-    },
-    closeImageModal() {
-      this.selectedImage = null;
-      document.body.style.overflow = '';
-    },
-    formatDate(dateString) {
-      if (!dateString) return '';
-      const date = new Date(dateString);
-      return date.toLocaleDateString('pt-BR', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-      });
-    },
-    onImageLoad() {
-      // Callback quando a imagem carrega
-    },
-    onImageError(event) {
-      // Callback quando há erro no carregamento
-      console.error('Erro ao carregar imagem:', event);
-    }
+  { 
+    id: 4, 
+    title: 'Desenvolvimento de Apps', 
+    alt: 'Protótipo de aplicativo sendo testado',
+    image: { url: new URL(`@/assets/images/image-4.png`, import.meta.url).href } 
   },
-  beforeUnmount() {
-    // Limpa o overflow quando o componente é destruído
-    document.body.style.overflow = '';
-  }
+  { 
+    id: 5,
+    title: 'Oficina de Web Design',
+    alt: 'Alunos aprendendo sobre design responsivo',
+    image: { url: new URL(`@/assets/images/image-5.png`, import.meta.url).href }  // Assumindo que são .jpeg
+  },
+  { 
+    id: 6,
+    title: 'Oficina de Web Design',
+    alt: 'Alunos aprendendo sobre design responsivo',
+    image: { url: new URL(`@/assets/images/image-6.png`, import.meta.url).href }  // Assumindo que são .jpeg
+  },
+  { 
+    id: 7,
+    title: 'Oficina de Web Design',
+    alt: 'Alunos aprendendo sobre design responsivo',
+    image: { url: new URL(`@/assets/images/image-7.png`, import.meta.url).href }  // Assumindo que são .jpeg
+  },
+  { 
+    id: 8,
+    title: 'Oficina de Web Design',
+    alt: 'Alunos aprendendo sobre design responsivo',
+    image: { url: new URL(`@/assets/images/image-8.png`, import.meta.url).href }  // Assumindo que são .jpeg
+  },
+  { 
+    id: 9,
+    title: 'Oficina de Web Design',
+    alt: 'Alunos aprendendo sobre design responsivo',
+    image: { url: new URL(`@/assets/images/image-9.png`, import.meta.url).href }  // Assumindo que são .jpeg
+  },
+]);
+
+// 3. A lógica do modal continua a mesma, mas agora é mais simples
+const selectedImage = ref(null);
+
+const openImageModal = (item) => {
+  selectedImage.value = item;
+  document.body.style.overflow = 'hidden';
+};
+
+const closeImageModal = () => {
+  selectedImage.value = null;
+  document.body.style.overflow = '';
 };
 </script>
 
@@ -467,7 +415,7 @@ export default {
   backdrop-filter: blur(16px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   
-  img {
+  .image {
     width: 100%;
     height: auto;
     max-height: 70vh;

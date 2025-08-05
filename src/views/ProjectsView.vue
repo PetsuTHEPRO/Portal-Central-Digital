@@ -11,50 +11,35 @@
         </div>
       </div>
 
-      <div v-if="projectStore.loading" class="text-center">
-        <div class="loading-spinner">
-          <i class="bi bi-arrow-clockwise spin"></i>
-          <p class="mt-3">Carregando projetos...</p>
+      <div v-if="loading" class="text-center">
         </div>
-      </div>
 
-      <div v-else-if="projectStore.error" class="text-center">
+      <div v-else-if="error" class="text-center">
         <div class="error-message">
           <i class="bi bi-exclamation-triangle"></i>
-          <p class="mt-3 text-danger">{{ projectStore.error }}</p>
+          <p class="mt-3 text-danger">{{ error }}</p>
         </div>
       </div>
 
-      <div v-else-if="projectStore.projects.length > 0">
+      <div v-else-if="projectsList.length > 0">
         <div class="row">
           <div
-            v-for="project in paginatedProjects"
+            v-for="project in projectsList"
             :key="project.id"
             class="col-lg-4 col-md-6 mb-4 d-flex align-items-stretch"
           >
             <div class="project-card">
-              <div
-                v-if="!project.imagemDestaqueUrl"
-                class="card-image-placeholder"
-              >
-                <i class="bi bi-image"></i>
-              </div>
-              <div v-else class="card-image">
-                <AuthenticatedImage :src="project.imagemDestaqueUrl" :alt="project.title" />
+              <div class="card-image">
+                <img v-if="project.featuredImageUrl" :src="project.featuredImageUrl" :alt="project.title" />
+                <div v-else class="card-image-placeholder"><i class="bi bi-image"></i></div>
               </div>
               <div class="card-body">
                 <h5 class="card-title">{{ project.title }}</h5>
-                <p class="card-text">
-                  {{ project.resumo || project.content }}
-                </p>
-                <!-- Teste com div clicável -->
+                <p class="card-text">{{ project.resumo }}</p>
                 <div
                   class="btn btn-primary mt-auto clickable-btn"
-                  @click.stop="showProjectDetails(project)"
+                  @click="showProjectDetails(project)"
                   role="button"
-                  tabindex="0"
-                  @keydown.enter="showProjectDetails(project)"
-                  @keydown.space="showProjectDetails(project)"
                 >
                   Ver Detalhes <i class="bi bi-arrow-right"></i>
                 </div>
@@ -63,130 +48,82 @@
           </div>
         </div>
 
-        <nav
-          v-if="totalPages > 1"
-          aria-label="Navegação de página"
-          class="mt-5"
-        >
+        <nav v-if="pagination && pagination.pageCount > 1" aria-label="Navegação de página" class="mt-5">
           <div class="pagination-container">
-            <button 
-              class="pagination-btn"
-              :class="{ disabled: currentPage === 1 }"
-              @click="prevPage"
-              :disabled="currentPage === 1"
-            >
-              <i class="bi bi-chevron-left"></i>
-              Anterior
-            </button>
-            
+            <button class="pagination-btn" :disabled="pagination.page === 1" @click="changePage(pagination.page - 1)">Anterior</button>
             <div class="page-numbers">
               <button
-                v-for="page in totalPages"
+                v-for="page in pagination.pageCount"
                 :key="page"
                 class="page-btn"
-                :class="{ active: page === currentPage }"
-                @click="goToPage(page)"
-              >
-                {{ page }}
-              </button>
+                :class="{ active: page === pagination.page }"
+                @click="changePage(page)"
+              >{{ page }}</button>
             </div>
-            
-            <button 
-              class="pagination-btn"
-              :class="{ disabled: currentPage === totalPages }"
-              @click="nextPage"
-              :disabled="currentPage === totalPages"
-            >
-              Próximo
-              <i class="bi bi-chevron-right"></i>
-            </button>
+            <button class="pagination-btn" :disabled="pagination.page === pagination.pageCount" @click="changePage(pagination.page + 1)">Próximo</button>
           </div>
         </nav>
       </div>
 
       <div v-else class="text-center">
-        <div class="empty-state">
-          <i class="bi bi-folder2-open"></i>
-          <h5 class="mt-3">Nenhum projeto encontrado</h5>
-          <p>Não há projetos disponíveis no momento.</p>
         </div>
-      </div>
 
-      <ProjectModal ref="projectModal" :project="selectedProject" @close="closeModal" />
+      <!-- Modal de Detalhes do Projeto -->
+    <ProjectModal 
+      ref="projectModal"
+      :project="selectedProject"
+      @close="closeModal"
+    />
     </div>
   </section>
 </template>
 
-<script>
-// 1. REMOVA mapState dos imports
-import { useProjectStore } from "@/stores/projectStore";
-import ProjectModal from "@/components/ProjectModal.vue";
-import AuthenticatedImage from "@/components/AuthenticatedImage.vue";
+<script setup>
+import { ref, onMounted, nextTick } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useProjectStore } from '@/stores/projectStore';
+import ProjectModal from '@/components/ProjectModal.vue';
 
-export default {
-  name: "ProjectsView",
-  components: { ProjectModal, AuthenticatedImage },
-  data() {
-    return {
-      currentPage: 1,
-      itemsPerPage: 6,
-      selectedProject: null,
-    };
-  },
-  computed: {
-    // 2. CRIE uma propriedade computada para a store inteira
-    projectStore() {
-      return useProjectStore();
-    },
+// 1. Conecta o componente com a store Pinia
+const projectStore = useProjectStore();
 
-    // 3. ATUALIZE as outras propriedades para usar a 'projectStore'
-    totalPages() {
-      if (!this.projectStore.projects) return 0;
-      return Math.ceil(this.projectStore.projects.length / this.itemsPerPage);
-    },
-    paginatedProjects() {
-      if (!this.projectStore.projects) return [];
-      const start = (this.currentPage - 1) * this.itemsPerPage;
-      const end = start + this.itemsPerPage;
-      return this.projectStore.projects.slice(start, end);
-    },
-  },
-  methods: {
-    // Seus métodos continuam iguais
-    showProjectDetails(project) {
-      console.log('Button clicked! Project:', project.title); // Debug temporário
-      this.selectedProject = project;
-      // Aguarda o próximo tick para garantir que o projeto foi atualizado
-      this.$nextTick(() => {
-        if (this.$refs.projectModal) {
-          this.$refs.projectModal.openModal();
-        } else {
-          console.error('Modal ref not found');
-        }
-      });
-    },
-    closeModal() {
-      this.selectedProject = null;
-    },
-    goToPage(pageNumber) {
-      this.currentPage = pageNumber;
-    },
-    nextPage() {
-      if (this.currentPage < this.totalPages) {
-        this.currentPage++;
-      }
-    },
-    prevPage() {
-      if (this.currentPage > 1) {
-        this.currentPage--;
-      }
-    },
-  },
-  created() {
-    // A chamada no created continua igual, mas usando a propriedade computada
-    this.projectStore.fetchProjects();
-  },
+// 2. Pega o state e as actions que precisamos da store
+const { projectsList, pagination, currentProject, loading, error } = storeToRefs(projectStore);
+const { fetchAllProjects, fetchProjectById } = projectStore;
+
+// 3. Lógica do Modal
+const projectModal = ref(null);
+const selectedProject = ref(null); // Mantemos este ref para o modal
+
+const showProjectDetails = async (project) => {
+  // Pede à store para buscar os dados completos deste projeto específico
+  selectedProject.value = project;
+  
+  // 3. Espera o Vue atualizar o componente do modal com os novos dados
+  await nextTick();
+
+  // Agora 'projectModal.value' não será mais nulo e terá o método 'openModal'
+  if (projectModal.value) {
+    projectModal.value.openModal();
+  }
 };
+
+const closeModal = () => {
+  // Apenas limpa a seleção, o modal se fechará
+  projectStore.currentProject = null;
+};
+
+// 4. Lógica da Paginação
+const changePage = (page) => {
+  if (page < 1 || page > pagination.value.pageCount) return;
+  window.scrollTo({ top: 0, behavior: "smooth" });
+  fetchAllProjects(page); // Pede à store para buscar os dados da nova página
+};
+
+// 5. Quando o componente é montado, busca a primeira página de projetos
+onMounted(() => {
+  fetchAllProjects(1);
+});
 </script>
 
 <style scoped lang="scss">

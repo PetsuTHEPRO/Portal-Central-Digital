@@ -49,14 +49,14 @@
             </div>
 
             <div class="card-visual">
-              <div v-if="!project.imagemDestaqueUrl" class="visual-placeholder">
+              <div v-if="!project.featuredImageUrl" class="visual-placeholder">
                 <div class="placeholder-content">
                   <i class="bi bi-layers"></i>
                   <div class="placeholder-shimmer"></div>
                 </div>
               </div>
               <div v-else class="visual-image">
-                <img :src="project.imagemDestaqueUrl" :alt="project.title" />
+                <img :src="project.featuredImageUrl" :alt="project.title" class="image"/>
               </div>
             </div>
 
@@ -110,73 +110,46 @@
   </section>
 </template>
 
-<script>
-// 1. Importe o seu apiService
-import apiService from '@/services/api'; // Ajuste o caminho se necessário
+<script setup>
+import { ref, onMounted, nextTick } from 'vue';
+import { storeToRefs } from 'pinia';
+import { useProjectStore } from '@/stores/projectStore';
 import ProjectModal from '@/components/ProjectModal.vue';
+// O componente 'AuthenticatedImage' pode não ser mais necessário se a API for pública.
+// Se ainda precisar dele, descomente a linha abaixo.
+// import AuthenticatedImage from '@/components/AuthenticatedImage.vue';
 
-export default {
-  name: "ProjectsSection",
-  components: {
-    // 2. Registre o componente para uso no template
-    ProjectModal,
-  },
-  emits: ['view-details'],
-  data() {
-    return {
-      featuredProjects: [],
-      loading: true,
-      error: null,
-      selectedProject: null,
-    };
-  },
-  async created() {
-    // 3. Buscar os 3 últimos projetos
-    try {
-      // Buscar todos os projetos, ordenados por data de criação (mais recentes primeiro)
-      const projectsResponse = await apiService.get('/projetos', {
-        params: {
-          per_page: 3, // Limitar a 3 projetos
-          orderby: 'date', // Ordenar por data
-          order: 'desc' // Ordem decrescente (mais recentes primeiro)
-        }
-      });
+// 1. CONECTA O COMPONENTE À STORE PINIA
+const projectStore = useProjectStore();
 
-      // O mapeamento dos dados
-      this.featuredProjects = projectsResponse.map(project => ({
-        id: project.id,
-        title: project.title.rendered,
-        resumo: project.acf.resumo_projeto || project.excerpt.rendered,
-        description: project.content.rendered,
-        // A URL da imagem é passada para o AuthenticatedImage
-        imagemDestaqueUrl: project.acf.imagem_de_destaque ? project.acf.imagem_de_destaque.url : null,
-        status: project.acf.status_do_projeto || 'Ativo',
-        integrantes: project.acf.integrantes || [],
-        galeria: project.acf.galeria || []
-      }));
+// 2. PEGA O STATE E AS ACTIONS DA STORE
+const { featuredProjects, loading, error } = storeToRefs(projectStore);
+const { fetchFeaturedProjects } = projectStore;
 
-    } catch (error) {
-      // O erro já é logado pelo interceptor, aqui apenas atualizamos a UI
-      this.error = "Não foi possível carregar os projetos.";
-    } finally {
-      this.loading = false;
-    }
-  },
-  methods: {
-    openProjectModal(project) {
-      this.selectedProject = project;
-      // Aguarda o próximo tick para garantir que o projeto foi atualizado
-      this.$nextTick(() => {
-        if (this.$refs.projectModal) {
-          this.$refs.projectModal.openModal();
-        }
-      });
-    },
-    closeModal() {
-      this.selectedProject = null;
-    }
-  },
+// 3. LÓGICA DO MODAL (agora com <script setup>)
+const selectedProject = ref(null);
+const projectModal = ref(null);
+
+const openProjectModal = async (project) => {
+  selectedProject.value = project;
+  
+  // 3. Espera o Vue atualizar o componente do modal com os novos dados
+  await nextTick();
+
+  // Agora 'projectModal.value' não será mais nulo e terá o método 'openModal'
+  if (projectModal.value) {
+    projectModal.value.openModal();
+  }
 };
+
+const closeModal = () => {
+  selectedProject.value = null;
+};
+
+// 4. QUANDO O COMPONENTE É MONTADO, BUSCA OS PROJETOS EM DESTAQUE
+onMounted(() => {
+  fetchFeaturedProjects();
+});
 </script>
 
 <style scoped lang="scss">
@@ -366,7 +339,7 @@ export default {
     }
     
     .visual-image {
-      img {
+      .image {
         transform: scale(1.1);
       }
     }
@@ -461,7 +434,7 @@ export default {
   height: 100%;
   position: relative;
   
-  img {
+  .image {
     width: 100%;
     height: 100%;
     object-fit: cover;

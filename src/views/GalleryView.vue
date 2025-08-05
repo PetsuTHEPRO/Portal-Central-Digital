@@ -3,36 +3,14 @@
     <div class="container">
       <div class="row justify-content-center text-center mb-5">
         <div class="col-lg-8">
-          <h1 class="page-title">Confira os Registros das Nossas Oficinas!</h1>
+          <h1 class="page-title">Galeria de Mídia</h1>
           <p class="page-subtitle">
             Explore os momentos especiais capturados durante nossas oficinas e
-            eventos. Cada imagem conta uma história de aprendizado e
-            transformação.
+            eventos.
           </p>
         </div>
       </div>
 
-      <!-- Filtros por período -->
-      <div class="row justify-content-center mb-5">
-        <div class="col-lg-8">
-          <div class="filter-container">
-            <button
-              v-for="period in periods"
-              :key="period.value"
-              @click="selectedPeriod = period.value"
-              :class="[
-                'btn',
-                'filter-btn',
-                { active: selectedPeriod === period.value },
-              ]"
-            >
-              {{ period.label }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Loading state -->
       <div v-if="loading" class="text-center mb-5">
         <div class="loading-spinner">
           <i class="bi bi-arrow-clockwise spin"></i>
@@ -40,221 +18,109 @@
         </div>
       </div>
 
-      <!-- Error state -->
       <div v-else-if="error" class="text-center mb-5">
         <div class="error-message">
           <i class="bi bi-exclamation-triangle"></i>
-          <p class="mt-3">{{ error }}</p>
+          <p class="mt-3 text-danger">{{ error }}</p>
         </div>
       </div>
 
-      <!-- Gallery -->
-      <div v-else class="masonry-gallery">
-        <div
-          v-for="(item, index) in filteredGalleryItems"
-          :key="item.id || index"
-          class="gallery-item"
-          @click="openModal(item)"
-        >
-          <div class="image-card" :style="{ height: getRandomHeight() }">
-            <AuthenticatedImage
-              v-if="item.image"
-              :src="item.image.url"
-              class="image"
-              :alt="item.title || 'Imagem da galeria'"
-              @load="onImageLoad"
-              @error="onImageError"
-            />
-            <div v-else class="image-placeholder">
-              <i class="bi bi-image"></i>
-            </div>
-            <div class="image-overlay">
-              <div class="image-info">
-                <h6>{{ item.title || "Sem título" }}</h6>
-                <p>{{ formatDate(item.date) }}</p>
+      <div v-else-if="images.length > 0">
+        <div class="masonry-gallery">
+          <div
+            v-for="image in images"
+            :key="image.id"
+            class="gallery-item"
+            @click="openModal(image)"
+          >
+            <div class="image-card" :style="{ height: getRandomHeight() }">
+              <img
+                :src="image.url"
+                :alt="image.alt || image.name"
+                class="image"
+              />
+              <div class="image-overlay">
+                <div class="image-info">
+                  <h6>{{ image.caption || image.name }}</h6>
+                </div>
               </div>
             </div>
           </div>
         </div>
+
+        <nav v-if="pagination && pagination.pageCount > 1" class="pagination-nav mt-5">
+          <div class="pagination-container">
+            <button class="pagination-btn" :disabled="pagination.page === 1" @click="changePage(pagination.page - 1)">Anterior</button>
+            <div class="page-numbers">
+              <button v-for="page in pagination.pageCount" :key="page" class="page-btn" :class="{ active: page === pagination.page }" @click="changePage(page)">{{ page }}</button>
+            </div>
+            <button class="pagination-btn" :disabled="pagination.page === pagination.pageCount" @click="changePage(pagination.page + 1)">Próximo</button>
+          </div>
+        </nav>
       </div>
 
-      <!-- Empty state -->
-      <div
-        v-if="!loading && !error && filteredGalleryItems.length === 0"
-        class="text-center"
-      >
-        <div class="empty-state">
-          <i class="bi bi-images"></i>
-          <h5 class="mt-3">Nenhuma imagem encontrada</h5>
-          <p>Não há imagens disponíveis para o período selecionado.</p>
+      <div v-else class="text-center">
         </div>
-      </div>
     </div>
 
-    <!-- Modal para visualizar imagem -->
     <div v-if="selectedImage" class="image-modal" @click="closeModal">
       <div class="modal-content" @click.stop>
         <button class="modal-close" @click="closeModal">
           <i class="bi bi-x-lg"></i>
         </button>
-        <AuthenticatedImage :src="selectedImage.image?.url" :alt="selectedImage.title" />
+        <img :src="selectedImage.url" :alt="selectedImage.alt" />
         <div class="modal-info">
-          <h5>{{ selectedImage.title }}</h5>
-          <p>{{ formatDate(selectedImage.date) }}</p>
+          <h5>{{ selectedImage.caption || selectedImage.name }}</h5>
+          <p v-if="selectedImage.albumTitle">Álbum: {{ selectedImage.albumTitle }}</p>
         </div>
       </div>
     </div>
   </main>
 </template>
 
-<script>
-import AuthenticatedImage from "@/components/AuthenticatedImage.vue";
-import apiService from "@/services/api";
+<script setup>
+import { ref, onMounted } from "vue";
+import { storeToRefs } from "pinia";
+// Vamos criar e usar uma 'galleryStore' para os álbuns
+import { useGalleryStore } from "@/stores/galeriaStore";
 
-export default {
-  name: "GalleryView",
-  components: {
-    AuthenticatedImage,
-  },
-  data() {
-    return {
-      galleryItems: [],
-      loading: false,
-      error: null,
-      selectedPeriod: "all",
-      selectedImage: null,
-      periods: [
-        { value: "all", label: "Todos os Períodos" },
-        { value: "2024", label: "2024" },
-        { value: "2023", label: "2023" },
-        { value: "2022", label: "2022" },
-        { value: "recent", label: "Últimos 30 dias" },
-      ],
-      heights: [
-        "250px",
-        "300px",
-        "350px",
-        "400px",
-        "450px",
-        "280px",
-        "320px",
-        "380px",
-      ],
-    };
-  },
-  computed: {
-    filteredGalleryItems() {
-      if (this.selectedPeriod === "all") {
-        return this.galleryItems;
-      }
+const galleryStore = useGalleryStore();
+const { images, pagination, loading, error } = storeToRefs(galleryStore);
+const { fetchImages } = galleryStore;
 
-      if (this.selectedPeriod === "recent") {
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        return this.galleryItems.filter(
-          (item) => new Date(item.date) >= thirtyDaysAgo
-        );
-      }
+// Lógica do Modal
+const selectedImage = ref(null);
+const selectedAlbumTitle = ref("");
 
-      return this.galleryItems.filter(
-        (item) =>
-          new Date(item.date).getFullYear().toString() === this.selectedPeriod
-      );
-    },
-  },
-  async mounted() {
-    await this.loadGalleryItems();
-  },
-  watch: {
-    selectedPeriod() {
-      // Trigger any additional filtering logic if needed
-    },
-  },
-  methods: {
-    async loadGalleryItems() {
-      this.loading = true;
-      this.error = null;
-
-      try {
-        // 1. FAZ A CHAMADA PARA O ENDPOINT CORRETO DO WORDPRESS
-        // Substitua 'galeria' se o seu slug for diferente.
-        // O parâmetro _embed pode ser útil para obter mais dados no futuro.
-        const response = await apiService.get("/galeria?_embed");
-
-        // --- PASSO DE DEBUG: INSPECIONE ISSO NO CONSOLE DO NAVEGADOR ---
-        console.log("RESPOSTA COMPLETA DA API:", response);
-        console.log(
-          "DADOS DA RESPOSTA (response.data):",
-          response[0].gallery_data
-        );
-        // --- FIM DO PASSO DE DEBUG ---
-
-        // A CORREÇÃO FINAL ESTÁ AQUI:
-        // Usamos 'response' diretamente, pois ele já é o array que precisamos.
-        const galleries = response || [];
-
-        this.galleryItems = galleries.flatMap((gallery) => {
-          // Esta verificação continua sendo uma boa prática
-          if (!gallery.gallery_data || !Array.isArray(gallery.gallery_data)) {
-            return [];
-          }
-
-          return gallery.gallery_data.map((image) => ({
-            id: image.id,
-            title: gallery.title.rendered,
-            date: gallery.date,
-            image: {
-              url: image.url_full,
-              large: image.url_large,
-              medium: image.url_medium,
-            },
-            alt: image.alt,
-            caption: image.caption,
-          }));
-        });
-      } catch (error) {
-        this.error = "Erro ao carregar a galeria. Tente novamente mais tarde.";
-        // Agora o console.error mostrará o erro original da API, se houver
-        console.error("Gallery loading error:", error);
-      } finally {
-        this.loading = false;
-      }
-    },
-    getRandomHeight() {
-      return this.heights[Math.floor(Math.random() * this.heights.length)];
-    },
-    formatDate(dateString) {
-      if (!dateString) return "Data não disponível";
-
-      const date = new Date(dateString);
-      return date.toLocaleDateString("pt-BR", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    },
-    openModal(item) {
-      this.selectedImage = item;
-      document.body.style.overflow = "hidden";
-    },
-    closeModal() {
-      this.selectedImage = null;
-      document.body.style.overflow = "auto";
-    },
-    onImageLoad(event) {
-      // Handle successful image load
-      event.target.style.opacity = "1";
-    },
-    onImageError(event) {
-      // Handle image load error - show placeholder
-      event.target.style.display = "none";
-      const placeholder = event.target.nextElementSibling;
-      if (placeholder) {
-        placeholder.style.display = "flex";
-      }
-    },
-  },
+const openModal = (image, albumTitle) => {
+  selectedImage.value = image;
+  selectedAlbumTitle.value = albumTitle;
+  document.body.style.overflow = "hidden";
 };
+
+const closeModal = () => {
+  selectedImage.value = null;
+  selectedAlbumTitle.value = "";
+  document.body.style.overflow = "auto";
+};
+
+// Lógica da Paginação (se aplicável)
+const changePage = (page) => {
+  if (page < 1 || (pagination.value && page > pagination.value.pageCount))
+  return;
+window.scrollTo({ top: 0, behavior: "smooth" });
+fetchImages(page);
+};
+
+onMounted(() => {
+  fetchImages(1);
+  console.log(images, "faz nem sentido")
+});
+
+// Funções de formatação e altura aleatória (mantidas)
+const heights = ["250px", "300px", "350px", "400px", "450px"];
+const getRandomHeight = () =>
+  heights[Math.floor(Math.random() * heights.length)];
 </script>
 
 <style scoped lang="scss">
@@ -422,7 +288,6 @@ export default {
     width: 100%;
     height: 100%;
     object-fit: cover;
-    opacity: 0;
     transition: opacity 0.3s ease;
   }
 }

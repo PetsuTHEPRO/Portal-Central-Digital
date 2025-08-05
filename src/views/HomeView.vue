@@ -14,7 +14,6 @@
 </template>
 
 <script>
-import { useHomeStore } from "@/stores/homeStore";
 import { useProjectStore } from "@/stores/projectStore";
 import LoadingScreen from "@/components/LoadingScreen.vue";
 import HeroSection from "@/components/home/HeroSection.vue";

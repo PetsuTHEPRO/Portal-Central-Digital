@@ -38,8 +38,8 @@
           <section class="project-featured-image" aria-labelledby="featured-image-title">
             <h6 id="featured-image-title" class="sr-only">Imagem de destaque do projeto</h6>
             <img
-              v-if="project.imagemDestaqueUrl"
-              :src="project.imagemDestaqueUrl"
+              v-if="project.featuredImageUrl"
+              :src="project.featuredImageUrl"
               :alt="`Imagem de destaque do projeto ${project.title || 'sem nome'}`"
               tabindex="0"
               @keydown.enter="announceImage"
@@ -68,7 +68,7 @@
             <div v-if="project.integrantes && project.integrantes.length > 0">
               <p class="section-subtitle">Conheça os membros responsáveis pelo desenvolvimento deste projeto.</p>
               <div class="integrantes-grid" role="region" aria-labelledby="members-title">
-                <IntegrantesSlider :memberIds="project.integrantes" />
+                <IntegrantesSlider :members="project.integrantes" />
               </div>
             </div>
             <div v-else class="empty-state" role="status" aria-live="polite">
@@ -102,7 +102,7 @@
                   @keydown.space.prevent="openImageViewer(image)"
                   :aria-label="`Imagem ${index + 1} da galeria: ${image.alt || 'sem descrição'}`"
                 >
-                  <img 
+                  <AuthenticatedImage 
                     :src="image.url" 
                     :alt="image.alt || `Imagem ${index + 1} da galeria do projeto`"
                     role="img"
@@ -128,10 +128,12 @@
 <script>
 import { Modal } from "bootstrap";
 import IntegrantesSlider from '@/components/IntegrantesSlider.vue';
+import AuthenticatedImage from "@/components/AuthenticatedImage.vue";
 
 export default {
   name: "ProjectModal",
   components: {
+    AuthenticatedImage,
     IntegrantesSlider
   },
   props: {
@@ -145,6 +147,7 @@ export default {
       modalInstance: null,
     };
   },
+
   mounted() {
     // A única coisa necessária aqui é inicializar o modal do Bootstrap
     try {
@@ -175,6 +178,7 @@ export default {
       if (this.modalInstance && this.project) {
         this.modalInstance.show();
       }
+      console.log(this.project)
     },
     closeModal() {
       if (this.modalInstance) {

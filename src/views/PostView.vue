@@ -25,36 +25,38 @@
   </div>
 
   <!-- Post content -->
-  <main v-else-if="post" class="post-view">
+  <main v-else-if="currentPost" class="post-view">
     <header class="post-header">
       <div class="container">
         <div class="row justify-content-center">
           <div class="col-lg-10 text-center">
             <!-- Category badge -->
-            <span v-if="post.category" class="post-badge">
-              {{ post.category.name || post.category }}
+            <span v-if="currentPost.category" class="post-badge">
+              {{ currentPost.category.name || currentPost.category }}
             </span>
-            
-            <h1 class="post-title">{{ post.title }}</h1>
-            
+
+            <h1 class="post-title">{{ currentPost.title }}</h1>
+
             <div class="post-meta">
               <div class="meta-item">
                 <i class="bi bi-person"></i>
-                <span>{{ post.author?.name || post.author || 'Autor não informado' }}</span>
+                <span>{{
+                  currentPost.author?.name || currentPost.author || "Autor não informado"
+                }}</span>
               </div>
               <div class="meta-item">
                 <i class="bi bi-calendar3"></i>
-                <span>{{ formatDate(post.publishedAt || post.date) }}</span>
+                <span>{{ formatDate(currentPost.publishedAt || currentPost.date) }}</span>
               </div>
-              <div class="meta-item" v-if="post.readTime">
+              <div class="meta-item" v-if="currentPost.readingTime">
                 <i class="bi bi-clock"></i>
-                <span>{{ post.readTime }} min de leitura</span>
+                <span>{{ currentPost.readingTime }} min de leitura</span>
               </div>
             </div>
 
             <!-- Tags -->
-            <div class="post-tags" v-if="post.tags && post.tags.length > 0">
-              <span v-for="tag in post.tags" :key="tag.id || tag" class="tag">
+            <div class="post-tags" v-if="currentPost.tags && currentPost.tags.length > 0">
+              <span v-for="tag in currentPost.tags" :key="tag.id || tag" class="tag">
                 {{ tag.name || tag }}
               </span>
             </div>
@@ -64,12 +66,15 @@
     </header>
 
     <!-- Featured image -->
-    <div v-if="post.featuredImage || post.featuredImageUrl" class="featured-image-container">
+    <div
+      v-if="currentPost.featuredImage || currentPost.featuredImageUrl"
+      class="featured-image-container"
+    >
       <div class="container">
         <div class="image-wrapper">
-          <img 
-            :src="post.featuredImage?.url || post.featuredImageUrl" 
-            :alt="post.title" 
+          <img
+            :src="currentPost.featuredImage?.url || currentPost.featuredImageUrl"
+            :alt="currentPost.title"
             class="featured-image"
             @error="onImageError"
           />
@@ -83,30 +88,46 @@
         <div class="row justify-content-center">
           <div class="col-lg-8">
             <div class="content-wrapper">
-              <div class="post-summary" v-if="post.summary">
-                <p>{{ post.summary }}</p>
+              <div class="post-summary" v-if="currentPost.summary">
+                <p>{{ currentPost.summary }}</p>
               </div>
-              
-              <div class="post-body" v-html="post.content"></div>
-              
+
+              <div class="post-body" v-html="currentPost.content"></div>
+
               <!-- Share buttons -->
               <div class="post-actions">
                 <div class="share-buttons">
                   <span class="share-label">Compartilhar:</span>
-                  <button class="share-btn" @click="shareOnTwitter" title="Compartilhar no Twitter">
+                  <button
+                    class="share-btn"
+                    @click="shareOnTwitter"
+                    title="Compartilhar no Twitter"
+                  >
                     <i class="bi bi-twitter"></i>
                   </button>
-                  <button class="share-btn" @click="shareOnFacebook" title="Compartilhar no Facebook">
+                  <button
+                    class="share-btn"
+                    @click="shareOnFacebook"
+                    title="Compartilhar no Facebook"
+                  >
                     <i class="bi bi-facebook"></i>
                   </button>
-                  <button class="share-btn" @click="shareOnLinkedIn" title="Compartilhar no LinkedIn">
+                  <button
+                    class="share-btn"
+                    @click="shareOnLinkedIn"
+                    title="Compartilhar no LinkedIn"
+                  >
                     <i class="bi bi-linkedin"></i>
                   </button>
-                  <button class="share-btn" @click="copyLink" title="Copiar link">
+                  <button
+                    class="share-btn"
+                    @click="copyLink"
+                    title="Copiar link"
+                  >
                     <i class="bi bi-link-45deg"></i>
                   </button>
                 </div>
-                
+
                 <router-link to="/posts" class="btn btn-outline-primary">
                   <i class="bi bi-arrow-left"></i>
                   Voltar para as Postagens
@@ -135,218 +156,76 @@
   </div>
 </template>
 
-<script>
-import blogRepository from '@/services/blogRepository';
-import apiService from '@/services/api';
+<script setup>
+import { onMounted, watch } from "vue";
+import { useRoute } from "vue-router";
+import { storeToRefs } from "pinia";
+import { usePostStore } from "@/stores/postStore";
 
-export default {
-  name: 'PostView',
-  props: {
-    id: {
-      type: String,
-      required: true
-    }
+// O componente agora recebe o ID da rota como uma 'prop'
+const props = defineProps({
+  id: {
+    type: String,
+    required: true,
   },
-  data() {
-    return {
-      post: null,
-      loading: false,
-      error: null
-    };
-  },
-  async mounted() {
-    await this.loadPost();
-  },
-  watch: {
-    id: {
-      handler: 'loadPost',
-      immediate: false
-    }
-  },
-  methods: {
-    async loadPost() {
-      this.loading = true;
-      this.error = null;
-      
-      try {
-        // --- SUA LÓGICA ORIGINAL (MANTIDA) ---
-        const postsResponse = await apiService.get(`/postagem/${this.id}`);
+});
 
-        if (!postsResponse || postsResponse.length === 0) {
-          throw new Error(
-            "O post em destaque com o ID fornecido não foi encontrado."
-          );
-        }
+const postStore = usePostStore();
+const { currentPost, loading, error } = storeToRefs(postStore);
+const { fetchPostById } = postStore;
 
-        console.log(postsResponse)
+const formatDate = (dateString) => {
+  if (!dateString) return "Data não disponível";
+  const options = { year: "numeric", month: "long", day: "numeric" };
+  return new Date(dateString).toLocaleDateString("pt-BR", options);
+};
 
-        // --- AQUI ESTÁ A MUDANÇA PRINCIPAL ---
-        // 2. Pegamos APENAS o primeiro post da lista que a API retornou.
-        const postData = postsResponse;
-        
-        // 3. Mapeamos esse ÚNICO post para o nosso objeto 'featuredPost'.
-        this.post = {
-          id: postData.id,
-          title: postData.acf.titulo_da_postagem || postData.title.rendered,
-          excerpt: postData.acf.descricao_curta || "", // Usando excerpt do ACF
-          content: postData.acf.conteudo_postagem, // Contéudo HTML do post
-          date: postData.date, // A data agora é dinâmica
-          // Usando oposttional chaining (?.) para mais segurança
-          featuredImageUrl: postData.acf.imagem_de_destaque?.url ?? null,
+// Quando o componente é montado, busca o post usando o ID da prop
+onMounted(() => {
+  fetchPostById(props.id);
+});
 
-          author: {
-            name:
-              postData.acf.informacoes_do_autor?.nome_do_autor ??
-              "Autor Desconhecido",
-            role: postData.acf.informacoes_do_autor?.cargo_do_autor ?? "",
-            avatarUrl:
-              postData.acf.informacoes_do_autor?.foto_do_autor?.url ?? null,
-          },
-        };
-        //this.post = response.data;
-      } catch (error) {
-        console.error('Post loading error:', error);
-        
-        // Fallback to mock data
-        const mockPosts = [
-          { 
-            id: 'ponte-digital-oficinas-sabado', 
-            category: 'Eventos', 
-            title: 'Ponte Digital Irá Fazer Oficinas no Sábado!',
-            author: { name: 'Jeane Silva' },
-            date: '2025-08-18',
-            readTime: 3,
-            tags: ['Oficinas', 'Tecnologia', 'Comunidade', 'Workshop'],
-            featuredImageUrl: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80',
-            summary: 'Não perca essa oportunidade única de aprender com nossa equipe especializada. Workshops exclusivos sobre desenvolvimento web, design e tecnologias emergentes.',
-            content: `
-              <p>O Programa Ponte Digital tem o prazer de anunciar uma série de oficinas práticas que acontecerão no próximo sábado! Este evento promete ser uma experiência transformadora para todos os participantes interessados em tecnologia e inovação.</p>
-              
-              <h4>🎯 O que você vai aprender</h4>
-              <p>Nossas oficinas foram cuidadosamente planejadas para oferecer conhecimento prático e aplicável em diversas áreas da tecnologia:</p>
-              <ul>
-                <li><strong>Desenvolvimento Web:</strong> Aprenda a criar sites modernos e responsivos</li>
-                <li><strong>Design Digital:</strong> Domine as ferramentas de design e UX/UI</li>
-                <li><strong>Tecnologias Emergentes:</strong> Explore IA, Machine Learning e muito mais</li>
-                <li><strong>Programação para Iniciantes:</strong> Dê os primeiros passos no mundo da programação</li>
-              </ul>
-              
-              <h4>👥 Quem são os facilitadores</h4>
-              <p>Nossa equipe é composta por profissionais experientes e estudantes dedicados do IFMA, todos comprometidos em compartilhar conhecimento de forma acessível e prática. Cada oficina será conduzida por especialistas na área, garantindo uma experiência de aprendizado de alta qualidade.</p>
-              
-              <blockquote>"A educação é a arma mais poderosa que você pode usar para mudar o mundo. E a tecnologia é nossa ferramenta para democratizar essa educação." - Equipe Ponte Digital</blockquote>
-              
-              <h4>📅 Programação do Evento</h4>
-              <p>O evento acontecerá das 8h às 17h, com intervalos para networking e coffee break. Cada participante poderá escolher até 3 oficinas diferentes durante o dia, maximizando sua experiência de aprendizado.</p>
-              
-              <p><strong>Horários disponíveis:</strong></p>
-              <ul>
-                <li>8h - 10h: Primeira rodada de oficinas</li>
-                <li>10h30 - 12h30: Segunda rodada de oficinas</li>
-                <li>14h - 16h: Terceira rodada de oficinas</li>
-                <li>16h30 - 17h: Encerramento e networking</li>
-              </ul>
-              
-              <h4>🎁 O que está incluso</h4>
-              <ul>
-                <li>Certificado de participação</li>
-                <li>Material didático exclusivo</li>
-                <li>Coffee break e lanche</li>
-                <li>Acesso à comunidade exclusiva no Discord</li>
-                <li>Mentoria pós-evento por 30 dias</li>
-              </ul>
-              
-              <p>Este é mais do que um evento educacional - é uma oportunidade de fazer parte de uma comunidade que acredita no poder transformador da tecnologia. Venha descobrir como a inovação pode impactar positivamente nossa sociedade!</p>
-              
-              <p><strong>Vagas limitadas!</strong> Garante já sua participação e faça parte dessa jornada de aprendizado e transformação.</p>
-            `
-          },
-          { 
-            id: 'oficinas-no-sabado', 
-            category: 'Eventos', 
-            title: 'Ponte Digital Irá Fazer Oficinas no Sábado!',
-            author: { name: 'Jeane' },
-            date: '2025-08-18',
-            readTime: 3,
-            tags: ['Oficinas', 'Tecnologia', 'Comunidade'],
-            featuredImageUrl: 'https://images.unsplash.com/photo-1542744173-8e7e53415bb0?ixlib=rb-4.0.3&auto=format&fit=crop&w=1740&q=80',
-            summary: 'Venha participar de nossas oficinas práticas de tecnologia e inovação. Uma oportunidade única para aprender e colaborar.',
-            content: `
-              <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis auctor, quam eget finibus cursus, nulla magna semper nisl, sed vulputate magna nibh eget arcu. Suspendisse potenti. Sed vitae lacinia nisl. Curabitur vel dictum sapien. Nam vitae ex sit amet turpis venenatis interdum.</p>
-              <p>Phasellus eu lorem ut ex dapibus commodo. Integer ac nisi eu justo aliquam consectetur. Proin quis nunc ex. In hac habitasse platea dictumst. Morbi nec leo nec elit consequat aliquam. Aliquam erat volutpat. Fusce id commodo enim.</p>
-              <h4>Um subtítulo interessante</h4>
-              <p>Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Donec at est ut elit commodo interdum. Pellentesque habitant morbi tristique senectus et netus et malesuada fames ac turpis egestas.</p>
-              <blockquote>"A tecnologia é melhor quando junta as pessoas." - Matt Mullenweg</blockquote>
-              <p>Continuamos o desenvolvimento com foco na comunidade, sempre buscando novas formas de inovar e educar através de nossos projetos e oficinas.</p>
-            `
-          },
-          {
-            id: 'novo-projeto-ia',
-            category: 'Projetos',
-            title: 'Lançamento do Novo Projeto de Inteligência Artificial',
-            author: { name: 'Carlos' },
-            date: '2025-08-15',
-            readTime: 5,
-            tags: ['IA', 'Inovação', 'Projetos'],
-            featuredImageUrl: 'https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=1740&q=80',
-            summary: 'Apresentamos nosso mais novo projeto focado em soluções de IA para a comunidade local.',
-            content: `
-              <p>Estamos orgulhosos de apresentar nosso mais novo projeto focado em soluções de Inteligência Artificial para a comunidade local. Este projeto visa otimizar processos e gerar impacto social positivo.</p>
-              <h4>Objetivos do Projeto</h4>
-              <p>O projeto tem como principais objetivos:</p>
-              <ul>
-                <li>Desenvolver soluções de IA acessíveis</li>
-                <li>Capacitar a comunidade local</li>
-                <li>Promover a inovação tecnológica</li>
-              </ul>
-              <p>Acreditamos que a tecnologia deve ser uma ferramenta de transformação social e este projeto é um passo importante nessa direção.</p>
-            `
-          }
-        ];
-        
-        this.post = mockPosts.find(p => p.id === this.id);
-        
-        if (!this.post) {
-          this.error = 'Post não encontrado';
-        }
-      } finally {
-        this.loading = false;
-      }
-    },
-    formatDate(dateString) {
-      if (!dateString) return 'Data não disponível';
-      
-      const options = { year: 'numeric', month: 'long', day: 'numeric' };
-      return new Date(dateString).toLocaleDateString('pt-BR', options);
-    },
-    onImageError(event) {
-      event.target.style.display = 'none';
-    },
-    shareOnTwitter() {
-      const url = encodeURIComponent(window.location.href);
-      const text = encodeURIComponent(this.post.title);
-      window.open(`https://twitter.com/intent/tweet?url=${url}&text=${text}`, '_blank');
-    },
-    shareOnFacebook() {
-      const url = encodeURIComponent(window.location.href);
-      window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, '_blank');
-    },
-    shareOnLinkedIn() {
-      const url = encodeURIComponent(window.location.href);
-      const title = encodeURIComponent(this.post.title);
-      window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}&title=${title}`, '_blank');
-    },
-    async copyLink() {
-      try {
-        await navigator.clipboard.writeText(window.location.href);
-        // You could add a toast notification here
-        alert('Link copiado para a área de transferência!');
-      } catch (err) {
-        console.error('Erro ao copiar link:', err);
-      }
-    }
+// (Opcional, mas recomendado) Se o ID na URL mudar sem a página recarregar,
+// busca os dados do novo post.
+watch(currentPost, (novoPost) => {
+  // A primeira vez que a página carrega, novoPost será null.
+  // A segunda vez, quando a API responder, ele terá os dados do post.
+  if (novoPost) {
+    console.log("A PIZZA CHEGOU! O post foi atualizado:", novoPost);
   }
-}
+});
+
+const shareOnTwitter = () => {
+  const url = encodeURIComponent(window.location.href);
+  const text = encodeURIComponent(this.post.title);
+  window.open(
+    `https://twitter.com/intent/tweet?url=${url}&text=${text}`,
+    "_blank"
+  );
+};
+
+const shareOnFacebook = () => {
+  const url = encodeURIComponent(window.location.href);
+  window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}`, "_blank");
+};
+
+const shareOnLinkedIn = () => {
+  const url = encodeURIComponent(window.location.href);
+  const title = encodeURIComponent(this.post.title);
+  window.open(
+    `https://www.linkedin.com/sharing/share-offsite/?url=${url}&title=${title}`,
+    "_blank"
+  );
+};
+const copyLink = () => {
+  try {
+    navigator.clipboard.writeText(window.location.href);
+    // You could add a toast notification here
+    alert("Link copiado para a área de transferência!");
+  } catch (err) {
+    console.error("Erro ao copiar link:", err);
+  }
+};
 </script>
 
 <style scoped lang="scss">
@@ -360,13 +239,14 @@ export default {
   overflow: hidden;
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg,
+    background: linear-gradient(
+      90deg,
       transparent,
       rgba(172, 0, 255, 0.3),
       rgba(6, 68, 216, 0.3),
@@ -375,7 +255,7 @@ export default {
   }
 
   &::after {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -392,22 +272,25 @@ export default {
 }
 
 // Loading, error, and not found states
-.loading-container, .error-container, .not-found-container {
+.loading-container,
+.error-container,
+.not-found-container {
   background: rgb(21, 23, 42);
   min-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  
+
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     height: 1px;
-    background: linear-gradient(90deg,
+    background: linear-gradient(
+      90deg,
       transparent,
       rgba(172, 0, 255, 0.3),
       rgba(6, 68, 216, 0.3),
@@ -416,11 +299,13 @@ export default {
   }
 }
 
-.loading-spinner, .error-message, .not-found-message {
+.loading-spinner,
+.error-message,
+.not-found-message {
   color: rgba(255, 255, 255, 0.8);
   padding: 3rem;
   text-align: center;
-  
+
   i {
     font-size: 4rem;
     background: linear-gradient(135deg, #ac00ff, #0644d8);
@@ -428,12 +313,12 @@ export default {
     background-clip: text;
     -webkit-text-fill-color: transparent;
   }
-  
+
   h2 {
-    color: #FFFFFF;
+    color: #ffffff;
     margin: 1rem 0;
   }
-  
+
   p {
     color: rgba(255, 255, 255, 0.8);
     margin-bottom: 1.5rem;
@@ -445,8 +330,12 @@ export default {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 // Post header
@@ -460,7 +349,7 @@ export default {
 
 .post-badge {
   background: linear-gradient(135deg, #ac00ff, #0644d8);
-  color: #FFFFFF;
+  color: #ffffff;
   padding: 0.5rem 1.5rem;
   font-size: 0.85rem;
   font-weight: 600;
@@ -475,7 +364,7 @@ export default {
 .post-title {
   font-size: 3.5rem;
   font-weight: 700;
-  color: #FFFFFF;
+  color: #ffffff;
   line-height: 1.2;
   margin-bottom: 2rem;
   background: linear-gradient(135deg, #ac00ff, #0644d8);
@@ -524,7 +413,7 @@ export default {
   &:hover {
     background: rgba(172, 0, 255, 0.2);
     border-color: rgba(172, 0, 255, 0.3);
-    color: #FFFFFF;
+    color: #ffffff;
   }
 }
 
@@ -540,15 +429,16 @@ export default {
   border-radius: 1rem;
   overflow: hidden;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  
+
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: -2px;
     left: -2px;
     right: -2px;
     bottom: -2px;
-    background: linear-gradient(45deg,
+    background: linear-gradient(
+      45deg,
       rgba(172, 0, 255, 0.3),
       rgba(6, 68, 216, 0.3)
     );
@@ -584,7 +474,7 @@ export default {
   overflow: hidden;
 
   &::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -607,7 +497,7 @@ export default {
   background: rgba(172, 0, 255, 0.1);
   border: 1px solid rgba(172, 0, 255, 0.2);
   border-radius: 1rem;
-  
+
   p {
     font-size: 1.2rem;
     line-height: 1.7;
@@ -621,7 +511,7 @@ export default {
   position: relative;
   color: white;
   z-index: 2;
-  
+
   :deep(p) {
     line-height: 1.8;
     font-size: 1.1rem;
@@ -631,7 +521,7 @@ export default {
 
   :deep(h4) {
     font-weight: 600;
-    color: #FFFFFF;
+    color: #ffffff;
     margin-top: 3rem;
     margin-bottom: 1.5rem;
     font-size: 1.5rem;
@@ -643,7 +533,7 @@ export default {
 
   :deep(h3) {
     font-weight: 600;
-    color: #FFFFFF;
+    color: #ffffff;
     margin-top: 3rem;
     margin-bottom: 1.5rem;
     font-size: 1.75rem;
@@ -664,10 +554,11 @@ export default {
     font-size: 1.1rem;
   }
 
-  :deep(ul), :deep(ol) {
+  :deep(ul),
+  :deep(ol) {
     color: rgba(255, 255, 255, 0.85);
     margin-bottom: 1.5rem;
-    
+
     li {
       margin-bottom: 0.5rem;
       line-height: 1.6;
@@ -675,16 +566,16 @@ export default {
   }
 
   :deep(strong) {
-    color: #FFFFFF;
+    color: #ffffff;
   }
 
   :deep(a) {
     color: rgba(172, 0, 255, 0.9);
     text-decoration: none;
     transition: color 0.3s ease;
-    
+
     &:hover {
-      color: #FFFFFF;
+      color: #ffffff;
       text-decoration: underline;
     }
   }
@@ -733,12 +624,13 @@ export default {
   &:hover {
     background: rgba(172, 0, 255, 0.2);
     border-color: rgba(172, 0, 255, 0.4);
-    color: #FFFFFF;
+    color: #ffffff;
     transform: translateY(-2px);
   }
 }
 
-.btn-primary, .btn-outline-primary {
+.btn-primary,
+.btn-outline-primary {
   padding: 0.75rem 1.5rem;
   font-weight: 500;
   border-radius: 0.5rem;
@@ -747,7 +639,7 @@ export default {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  
+
   &:hover {
     transform: translateY(-2px);
     text-decoration: none;
@@ -755,10 +647,10 @@ export default {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #0644D8, #ac00ff);
+  background: linear-gradient(135deg, #0644d8, #ac00ff);
   border: none;
   color: white;
-  
+
   &:hover {
     box-shadow: 0 8px 25px rgba(6, 68, 216, 0.4);
     color: white;
@@ -769,11 +661,11 @@ export default {
   background: transparent;
   border: 1px solid rgba(172, 0, 255, 0.5);
   color: rgba(172, 0, 255, 0.9);
-  
+
   &:hover {
     background: rgba(172, 0, 255, 0.1);
     border-color: rgba(172, 0, 255, 0.8);
-    color: #FFFFFF;
+    color: #ffffff;
   }
 }
 
@@ -782,15 +674,15 @@ export default {
   .post-title {
     font-size: 2.5rem;
   }
-  
+
   .post-header {
     padding: 6rem 0 3rem 0;
   }
-  
+
   .content-wrapper {
     padding: 2rem;
   }
-  
+
   .post-meta {
     gap: 1rem;
   }
@@ -800,26 +692,26 @@ export default {
   .post-title {
     font-size: 2rem;
   }
-  
+
   .post-header {
     padding: 5rem 0 2rem 0;
   }
-  
+
   .content-wrapper {
     padding: 1.5rem;
   }
-  
+
   .post-meta {
     flex-direction: column;
     gap: 0.75rem;
   }
-  
+
   .post-actions {
     flex-direction: column;
     align-items: stretch;
     text-align: center;
   }
-  
+
   .share-buttons {
     justify-content: center;
   }

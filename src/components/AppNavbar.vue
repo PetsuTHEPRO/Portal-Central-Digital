@@ -60,8 +60,8 @@
                           </div>
                         </div>
                       </router-link>
-                      <router-link
-                        to="/datahub"
+                      <a
+                        href="https://drive.google.com/drive/folders/1AGOjlU5jQqxfzMgeGPMYukmCmnsjsG1n?usp=drive_link"
                         class="list-group-item list-group-item-action mega-menu-item"
                       >
                         <div class="d-flex w-100 align-items-center">
@@ -77,7 +77,7 @@
                             <small>Organize seus arquivos com um click!</small>
                           </div>
                         </div>
-                      </router-link>
+                      </a>
                       <router-link
                         to="/galeria"
                         class="list-group-item list-group-item-action mega-menu-item"
